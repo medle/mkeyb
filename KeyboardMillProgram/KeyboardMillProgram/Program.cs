@@ -65,7 +65,7 @@ namespace KeyboardMillProgram
       int numSteps = (int)((topZ - bottomZ) / proposedStepZ);
       double realStepZ = (topZ - bottomZ) / numSteps;
       for (int i = 0; i < numSteps; i++) {
-        Comment($"Cut {i + 1}/{numSteps} stepDown={D2S(realStepZ)}");
+        Comment($"Cut {i + 1}/{numSteps} zDown={D2S(realStepZ)}");
         double cutZ = topZ - (i + 1) * realStepZ;
         CutSquare(false, holeX1, holeY1, holeX2, holeY2, cutZ);
       }
