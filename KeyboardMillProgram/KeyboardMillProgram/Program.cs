@@ -23,9 +23,9 @@ namespace KeyboardMillProgram
     const double u1 = inch * 0.75;
 
     // размеры отверстия
-    const double holeCX = 14;
-    const double holeCY = 13.5;
-    const double thinCY = 0.5;
+    const double holeCX = 13.8; // 3mm bit overcuts 0.1mm, result is 14.0
+    const double holeCY = 13.5; // result is 13.7
+    const double thinCY = 1;
 
     // фреза
     const double millD = 3;
@@ -60,7 +60,7 @@ namespace KeyboardMillProgram
       CutSquare(true, holeX1, holeY1 - thinCY, holeX2, holeY2 + thinCY, plateTopZ - 0.5);
 
       double topZ = plateTopZ - 0.5;
-      double bottomZ = plateTopZ - 2.5;
+      double bottomZ = plateTopZ - 2.1;
       double proposedStepZ = 0.3;
       int numSteps = (int)((topZ - bottomZ) / proposedStepZ);
       double realStepZ = (topZ - bottomZ) / numSteps;
