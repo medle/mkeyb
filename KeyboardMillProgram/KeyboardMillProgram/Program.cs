@@ -97,7 +97,7 @@ namespace KeyboardMillProgram
       // 2nd row: digits
       rowY += u1 * 1.5;
       for (int i = 0; i < 13; i++) CutSwitchU1(rowX + i * u1, rowY);
-      CutSwitchUnit(rowX + 13 * u1, rowY, 2);
+      CutSwitchUnitWithStabilizer(rowX + 13 * u1, rowY, 2, 24); // backspace
       for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
 
       // 3rd row: Tab
@@ -111,20 +111,19 @@ namespace KeyboardMillProgram
       rowY += u1;
       CutSwitchUnit(rowX, rowY, 1.75); 
       for (int i = 0; i < 11; i++) CutSwitchU1(rowX + u1 * 1.75 + i * u1, rowY);
-      CutSwitchUnit(rowX + u1 * 1.75 + 11 * u1, rowY, 2.25); // enter
-      CutStabilPair(rowX + u1 * 1.75 + 11 * u1, rowY, 2.25, 24);
+      CutSwitchUnitWithStabilizer(rowX + u1 * 1.75 + 11 * u1, rowY, 2.25, 24); // enter
 
       // 5th row: Shift
       rowY += u1;
-      CutSwitchUnit(rowX, rowY, 2.25);
+      CutSwitchUnitWithStabilizer(rowX, rowY, 2.25, 24); // left shift
       for (int i = 0; i < 10; i++) CutSwitchU1(rowX + u1 * 2.25 + i * u1, rowY);
-      CutSwitchUnit(rowX + u1 * 2.25 + 10 * u1, rowY, 2.75); // right shift
+      CutSwitchUnitWithStabilizer(rowX + u1 * 2.25 + 10 * u1, rowY, 2.75, 24); // right shift
       CutSwitchU1(rowX + u1 * 16.5, rowY); // arrow up
 
       // 6th row: Space
       rowY += u1;
       for(int i = 0; i < 3; i++) CutSwitchUnit(rowX + i * 1.25 * u1, rowY, 1.25);
-      CutSwitchUnit(rowX + u1 * 3.75, rowY, 6.25); // Space
+      CutSwitchUnitWithStabilizer(rowX + u1 * 3.75, rowY, 6.25, 100); // Space
       for (int i = 0; i < 4; i++) CutSwitchUnit(rowX + u1 * (3.75 + 6.25) + i * 1.25 * u1, rowY, 1.25);
       for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // arrows
 
@@ -142,6 +141,9 @@ namespace KeyboardMillProgram
       CutStabilBase(rightBaseCenterX, unitCenterY);
 
       // lever pass-through cutout
+      double passWidth = millD;
+      DrawSVGRect(leftBaseCenterX, unitCenterY, 
+                  rightBaseCenterX, unitCenterY + passWidth);
 
     }
 
@@ -157,6 +159,12 @@ namespace KeyboardMillProgram
     }
 
     void CutSwitchU1(double unitX, double unitY) => CutSwitchUnit(unitX, unitY, 1);
+
+    void CutSwitchUnitWithStabilizer(double unitX, double unitY, double widthInUnits, double stabilWidth)
+    {
+      CutSwitchUnit(unitX, unitY, widthInUnits);
+      CutStabilPair(unitX, unitY, widthInUnits, stabilWidth);
+    }
 
     void CutSwitchUnit(double unitX, double unitY, double widthInUnits)
     {
@@ -175,7 +183,7 @@ namespace KeyboardMillProgram
 
       double topZ = switchThinnerDepthZ;
       double bottomZ = finalCutDepthZ;
-      CutSquareWithStepsDown(holeX1, holeY1, holeX2, holeY2, topZ, bottomZ);
+      CutSquareMultiPass(holeX1, holeY1, holeX2, holeY2, topZ, bottomZ);
 
       double off = millR * (1 - Math.Cos(Math.PI / 4));
       Comment($"Corner00 off={off}");
@@ -188,7 +196,10 @@ namespace KeyboardMillProgram
       CutSafeHole(holeX2 + off - millR, holeY1 - off + millR, finalCutDepthZ);
     }
 
-    void CutSquareWithStepsDown(double x1, double y1, double x2, double y2, double topZ, double bottomZ)
+    void CutSquareFullDepth(double x1, double y1, double x2, double y2)
+      => CutSquareMultiPass(x1, y1, x2, y2, plateTopZ, finalCutDepthZ);
+
+    void CutSquareMultiPass(double x1, double y1, double x2, double y2, double topZ, double bottomZ)
     {
       bool jogToStart = true;
       int numSteps = (int)((topZ - bottomZ) / proposedStepDown);
