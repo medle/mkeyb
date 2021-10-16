@@ -15,35 +15,48 @@ namespace KeyboardMillProgram
       new Program();
     }
 
-    const string cuttingSpeedF = "F60";
-    const string drillSpeedF = "F10";
-
-    // размеры блока кнопки 1U
-    const double inch = 25.4;
-    const double u1 = inch * 0.75;
-
-    // размеры отверстия
-    const double holeCX = 13.8; // 3mm bit overcuts 0.1mm, result is 14.0
-    const double holeCY = 13.5; // result is 13.7
-    const double thinnerCY = 1;
-
-    // фреза
+    // mill bit
     const double millD = 3;
     const double millR = millD / 2;
+    const double millOvercut = 0.1; // 3mm bit overcuts 0.1mm
 
+    // cutting parameters
     const double safeZ = 5;
     const double slowZ = 1;
     const double plateTopZ = 0;
     const double proposedStepDown = 0.3;
     const double finalCutDepthZ = (plateTopZ - 2.1);
-    const double thinnerDepthZ = plateTopZ - 0.5;
+    const string cuttingSpeedF = "F60";
+    const string drillSpeedF = "F10";
+
+    // key block size 1U
+    const double inch = 25.4;
+    const double u1 = inch * 0.75;
+
+    // cherry MX switch cutout 
+    const double switchHoleCX = 14.0 - (millOvercut * 2); 
+    const double switchHoleCY = 13.7 - (millOvercut * 2); 
+    const double switchThinnerCY = 1;
+    const double switchThinnerDepthZ = plateTopZ - 0.5;
+
+    // panda stabilizer cutout
+    const double stabilHoleCX = 6.6 - (millOvercut * 2);
+    const double stabilHoleCY = 12.5 - (millOvercut * 2);
+    const double stabilCenterCY = 7 - millOvercut;
+    const double stabilBulgeBottomCY = stabilCenterCY;
+    const double stabilBulgeCX = 0.5;
+    const double stabilBulgeCY = 2;
+
+    // keyboard plate sizes
     const double plateBorder = 5;
-    const double backWallCY = 22;
-    const double frontWallCY = 12;
+    const double plateBackWallCY = 22;
+    const double plateFrontWallCY = 12;
+    const double plateCX = u1 * 18.5 + plateBorder * 2;
+    const double plateCY = u1 * 6.5 + plateBorder * 2;
 
     // SVG image size in mm  
     const double svgWidth = u1 * 18.5 + plateBorder * 2;
-    const double svgHeight = u1 * 6.5 + plateBorder * 2 + frontWallCY + backWallCY;
+    const double svgHeight = u1 * 6.5 + plateBorder * 2 + plateFrontWallCY + plateBackWallCY;
 
     bool writeGCode = false;
     bool writeSVG => !writeGCode;
@@ -55,6 +68,7 @@ namespace KeyboardMillProgram
 
       //CutU1(0, 0);
       CutAllKeys();
+      //CutStabilBase(0, 0);
 
       Comment("Program stops");
       JogZ(safeZ);
@@ -65,94 +79,126 @@ namespace KeyboardMillProgram
     {
       WriteSVGStart();
 
-      double rowX = plateBorder;
-      double rowY = frontWallCY + plateBorder + u1 * 5.5;
+      DrawSVGRect(0, 0, plateCX, plateBackWallCY); 
+      DrawSVGRect(0, plateBackWallCY, plateCX, plateBackWallCY + plateCY);
+      DrawSVGRect(0, plateBackWallCY + plateCY, plateCX, plateBackWallCY + plateCY + plateFrontWallCY);
 
-      double plateCX = u1 * 18.5 + plateBorder * 2;
-      double plateCY = u1 * 6.5 + plateBorder * 2;
-      DrawSVGRect(0, 0, plateCX, frontWallCY); 
-      DrawSVGRect(0, frontWallCY, plateCX, frontWallCY + plateCY);
-      DrawSVGRect(0, frontWallCY + plateCY, plateCX, frontWallCY + plateCY + backWallCY);
+      // plate is being milled upside-down because thinners are on the inside
+      double rowX = plateBorder;
+      double rowY = plateBackWallCY + plateBorder; 
 
       // 1st row: Escape
-      CutUnit(rowX, rowY, 1);
-      for (int i = 0; i < 4; i++) CutU1(rowX + u1 * 2 + i * u1, rowY);
-      for (int i = 0; i < 4; i++) CutU1(rowX + u1 * 6.5 + i * u1, rowY);
-      for (int i = 0; i < 4; i++) CutU1(rowX + u1 * 11 + i * u1, rowY);
-      for (int i = 0; i < 3; i++) CutU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
+      CutSwitchUnit(rowX, rowY, 1);
+      for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 2 + i * u1, rowY);
+      for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 6.5 + i * u1, rowY);
+      for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 11 + i * u1, rowY);
+      for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
 
       // 2nd row: digits
-      rowY -= u1 * 1.5;
-      for (int i = 0; i < 13; i++) CutU1(rowX + i * u1, rowY);
-      CutUnit(rowX + 13 * u1, rowY, 2);
-      for (int i = 0; i < 3; i++) CutU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
+      rowY += u1 * 1.5;
+      for (int i = 0; i < 13; i++) CutSwitchU1(rowX + i * u1, rowY);
+      CutSwitchUnit(rowX + 13 * u1, rowY, 2);
+      for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
 
       // 3rd row: Tab
-      rowY -= u1;
-      CutUnit(rowX, rowY, 1.5); 
-      for (int i = 0; i < 12; i++) CutU1(rowX + u1 * 1.5 + i * u1, rowY);
-      CutUnit(rowX + u1 * 1.5 + 12 * u1, rowY, 1.5);
-      for (int i = 0; i < 3; i++) CutU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
+      rowY += u1;
+      CutSwitchUnit(rowX, rowY, 1.5); 
+      for (int i = 0; i < 12; i++) CutSwitchU1(rowX + u1 * 1.5 + i * u1, rowY);
+      CutSwitchUnit(rowX + u1 * 1.5 + 12 * u1, rowY, 1.5);
+      for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
 
       // 4th row: Caps Lock
-      rowY -= u1;
-      CutUnit(rowX, rowY, 1.75); 
-      for (int i = 0; i < 11; i++) CutU1(rowX + u1 * 1.75 + i * u1, rowY);
-      CutUnit(rowX + u1 * 1.75 + 11 * u1, rowY, 2.25); // enter
+      rowY += u1;
+      CutSwitchUnit(rowX, rowY, 1.75); 
+      for (int i = 0; i < 11; i++) CutSwitchU1(rowX + u1 * 1.75 + i * u1, rowY);
+      CutSwitchUnit(rowX + u1 * 1.75 + 11 * u1, rowY, 2.25); // enter
+      CutStabilPair(rowX + u1 * 1.75 + 11 * u1, rowY, 2.25, 24);
 
       // 5th row: Shift
-      rowY -= u1;
-      CutUnit(rowX, rowY, 2.25);
-      for (int i = 0; i < 10; i++) CutU1(rowX + u1 * 2.25 + i * u1, rowY);
-      CutUnit(rowX + u1 * 2.25 + 10 * u1, rowY, 2.75); // right shift
-      CutU1(rowX + u1 * 16.5, rowY); // arrow up
+      rowY += u1;
+      CutSwitchUnit(rowX, rowY, 2.25);
+      for (int i = 0; i < 10; i++) CutSwitchU1(rowX + u1 * 2.25 + i * u1, rowY);
+      CutSwitchUnit(rowX + u1 * 2.25 + 10 * u1, rowY, 2.75); // right shift
+      CutSwitchU1(rowX + u1 * 16.5, rowY); // arrow up
 
       // 6th row: Space
-      rowY -= u1;
-      for(int i = 0; i < 3; i++) CutUnit(rowX + i * 1.25 * u1, rowY, 1.25);
-      CutUnit(rowX + u1 * 3.75, rowY, 6.25); // Space
-      for (int i = 0; i < 4; i++) CutUnit(rowX + u1 * (3.75 + 6.25) + i * 1.25 * u1, rowY, 1.25);
-      for (int i = 0; i < 3; i++) CutU1(rowX + u1 * 15.5 + i * u1, rowY); // arrows
+      rowY += u1;
+      for(int i = 0; i < 3; i++) CutSwitchUnit(rowX + i * 1.25 * u1, rowY, 1.25);
+      CutSwitchUnit(rowX + u1 * 3.75, rowY, 6.25); // Space
+      for (int i = 0; i < 4; i++) CutSwitchUnit(rowX + u1 * (3.75 + 6.25) + i * 1.25 * u1, rowY, 1.25);
+      for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // arrows
 
       WriteSVGStop();
     }
 
-    void CutU1(double unitX, double unitY) => CutUnit(unitX, unitY, 1);
+    void CutStabilPair(double unitX, double unitY, double widthInUnits, double leverWidth)
+    {
+      double unitCenterX = unitX + widthInUnits * u1 / 2;
+      double leftBaseCenterX = unitCenterX - leverWidth / 2;
+      double rightBaseCenterX = leftBaseCenterX + leverWidth;
+      double unitCenterY = unitY + u1 / 2;
 
-    void CutUnit(double unitX, double unitY, double widthInUnits)
+      CutStabilBase(leftBaseCenterX, unitCenterY);
+      CutStabilBase(rightBaseCenterX, unitCenterY);
+
+      // lever pass-through cutout
+
+    }
+
+    void CutStabilBase(double centerX, double centerY)
+    {
+      double holeX1 = centerX - stabilHoleCX / 2;
+      double centerToTopCY = (stabilHoleCY - stabilCenterCY);
+      double holeY1 = centerY - centerToTopCY; // is cut upside-down
+      double holeX2 = holeX1 + stabilHoleCX;
+      double holeY2 = holeY1 + stabilHoleCY;
+
+      DrawSVGRect(holeX1, holeY1, holeX2, holeY2);
+    }
+
+    void CutSwitchU1(double unitX, double unitY) => CutSwitchUnit(unitX, unitY, 1);
+
+    void CutSwitchUnit(double unitX, double unitY, double widthInUnits)
     {
       // границы отверстия
-      double holeX1 = unitX + ((u1 * widthInUnits) - holeCX) / 2;
-      double holeX2 = holeX1 + holeCX;
-      double holeY1 = unitY + (u1 - holeCY) / 2;
-      double holeY2 = holeY1 + holeCY;
+      double holeX1 = unitX + ((u1 * widthInUnits) - switchHoleCX) / 2;
+      double holeX2 = holeX1 + switchHoleCX;
+      double holeY1 = unitY + (u1 - switchHoleCY) / 2;
+      double holeY2 = holeY1 + switchHoleCY;
 
-      DrawSVGRect(unitX, unitY, unitX + u1 * widthInUnits, unitY + u1);
-      DrawSVGRect(holeX1, holeY1, holeX2, holeY2);
+      DrawSVGRect(unitX, unitY, unitX + u1 * widthInUnits, unitY + u1); // unit area
+      DrawSVGRect(holeX1, holeY1, holeX2, holeY2);                      // switch cutout
 
       JogZ(safeZ);
       Comment("Unit pocket");
-      CutSquare(true, holeX1, holeY1 - thinnerCY, holeX2, holeY2 + thinnerCY, thinnerDepthZ);
+      CutSquare(true, holeX1, holeY1 - switchThinnerCY, holeX2, holeY2 + switchThinnerCY, switchThinnerDepthZ);
 
-      double topZ = thinnerDepthZ;
+      double topZ = switchThinnerDepthZ;
       double bottomZ = finalCutDepthZ;
-      int numSteps = (int)((topZ - bottomZ) / proposedStepDown);
-      double realStepZ = (topZ - bottomZ) / numSteps;
-      for (int i = 0; i < numSteps; i++) {
-        Comment($"Cut {i + 1}/{numSteps} zDown={D2S(realStepZ)}");
-        double cutZ = topZ - (i + 1) * realStepZ;
-        CutSquare(false, holeX1, holeY1, holeX2, holeY2, cutZ);
-      }
+      CutSquareWithStepsDown(holeX1, holeY1, holeX2, holeY2, topZ, bottomZ);
 
       double off = millR * (1 - Math.Cos(Math.PI / 4));
       Comment($"Corner00 off={off}");
-      CutSafeHole(holeX1 - off + millR, holeY1 - off + millR, plateTopZ - 2.5);
+      CutSafeHole(holeX1 - off + millR, holeY1 - off + millR, finalCutDepthZ);
       Comment("Corner01");
-      CutSafeHole(holeX1 - off + millR, holeY2 + off - millR, plateTopZ - 2.5);
+      CutSafeHole(holeX1 - off + millR, holeY2 + off - millR, finalCutDepthZ);
       Comment("Corner11");
-      CutSafeHole(holeX2 + off - millR, holeY2 + off - millR, plateTopZ - 2.5);
+      CutSafeHole(holeX2 + off - millR, holeY2 + off - millR, finalCutDepthZ);
       Comment("Corner10");
-      CutSafeHole(holeX2 + off - millR, holeY1 - off + millR, plateTopZ - 2.5);
+      CutSafeHole(holeX2 + off - millR, holeY1 - off + millR, finalCutDepthZ);
+    }
+
+    void CutSquareWithStepsDown(double x1, double y1, double x2, double y2, double topZ, double bottomZ)
+    {
+      bool jogToStart = true;
+      int numSteps = (int)((topZ - bottomZ) / proposedStepDown);
+      double realStepDownZ = (topZ - bottomZ) / numSteps;
+      for (int i = 0; i < numSteps; i++) {
+        Comment($"Cut {i + 1}/{numSteps} zDown={D2S(realStepDownZ)}");
+        double cutZ = topZ - (i + 1) * realStepDownZ;
+        CutSquare(jogToStart, x1, y1, x2, y2, cutZ);
+        jogToStart = false;
+      }
     }
 
     void CutSafeHole(double x, double y, double finalZ)
