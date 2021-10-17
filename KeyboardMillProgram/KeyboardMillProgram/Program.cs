@@ -46,6 +46,7 @@ namespace KeyboardMillProgram
     const double stabilBulgeBottomCY = stabilCenterCY;
     const double stabilBulgeCX = 0.5;
     const double stabilBulgeCY = 2;
+    const double stabilThinnerCY = 3;
 
     // keyboard plate sizes
     const double plateBorder = 5;
@@ -58,27 +59,28 @@ namespace KeyboardMillProgram
     const double svgWidth = u1 * 18.5 + plateBorder * 2;
     const double svgHeight = u1 * 6.5 + plateBorder * 2 + plateFrontWallCY + plateBackWallCY;
 
-    bool writeGCode = false;
-    bool writeSVG => !writeGCode;
-
+    bool produceGCode = true;
+    bool produceSVG => !produceGCode;
 
     Program()
     {
       Comment($"Program starts");
+      WriteSVGStart();
 
       //CutU1(0, 0);
-      CutAllKeys();
+      //CutAllKeys();
       //CutStabilBase(0, 0);
+      CutSwitchUnitWithStabilizer(0, 0, 2, 24);
 
       Comment("Program stops");
       JogZ(safeZ);
       JogXY(0, 0);
+
+      WriteSVGStop();
     }
 
     void CutAllKeys()
     {
-      WriteSVGStart();
-
       DrawSVGRect(0, 0, plateCX, plateBackWallCY); 
       DrawSVGRect(0, plateBackWallCY, plateCX, plateBackWallCY + plateCY);
       DrawSVGRect(0, plateBackWallCY + plateCY, plateCX, plateBackWallCY + plateCY + plateFrontWallCY);
@@ -126,36 +128,6 @@ namespace KeyboardMillProgram
       CutSwitchUnitWithStabilizer(rowX + u1 * 3.75, rowY, 6.25, 100); // Space
       for (int i = 0; i < 4; i++) CutSwitchUnit(rowX + u1 * (3.75 + 6.25) + i * 1.25 * u1, rowY, 1.25);
       for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // arrows
-
-      WriteSVGStop();
-    }
-
-    void CutStabilPair(double unitX, double unitY, double widthInUnits, double leverWidth)
-    {
-      double unitCenterX = unitX + widthInUnits * u1 / 2;
-      double leftBaseCenterX = unitCenterX - leverWidth / 2;
-      double rightBaseCenterX = leftBaseCenterX + leverWidth;
-      double unitCenterY = unitY + u1 / 2;
-
-      CutStabilBase(leftBaseCenterX, unitCenterY);
-      CutStabilBase(rightBaseCenterX, unitCenterY);
-
-      // lever pass-through cutout
-      double passWidth = millD;
-      DrawSVGRect(leftBaseCenterX, unitCenterY, 
-                  rightBaseCenterX, unitCenterY + passWidth);
-
-    }
-
-    void CutStabilBase(double centerX, double centerY)
-    {
-      double holeX1 = centerX - stabilHoleCX / 2;
-      double centerToTopCY = (stabilHoleCY - stabilCenterCY);
-      double holeY1 = centerY - centerToTopCY; // is cut upside-down
-      double holeX2 = holeX1 + stabilHoleCX;
-      double holeY2 = holeY1 + stabilHoleCY;
-
-      DrawSVGRect(holeX1, holeY1, holeX2, holeY2);
     }
 
     void CutSwitchU1(double unitX, double unitY) => CutSwitchUnit(unitX, unitY, 1);
@@ -166,34 +138,82 @@ namespace KeyboardMillProgram
       CutStabilPair(unitX, unitY, widthInUnits, stabilWidth);
     }
 
+    void CutStabilPair(double unitX, double unitY, double widthInUnits, double leverWidth)
+    {
+      double unitCenterX = unitX + widthInUnits * u1 / 2;
+      double leftBaseCenterX = unitCenterX - leverWidth / 2;
+      double rightBaseCenterX = leftBaseCenterX + leverWidth;
+      double unitCenterY = unitY + u1 / 2;
+
+      CutStabilBase(leftBaseCenterX, unitCenterY);
+      double leverCenterY = CutStabilBase(rightBaseCenterX, unitCenterY);
+
+      Comment("Stabilizer lever pass");
+      double passCY = millD;
+      double leverY = leverCenterY - passCY / 2;
+      double leftPassX1 = leftBaseCenterX + stabilHoleCX / 2 - millR;
+      double leftPassX2 = unitCenterX - switchHoleCX / 2 + millR;
+      CutSquareFullDepth(leftPassX1, leverY, leftPassX2, leverY + passCY);
+      double rightPassX1 = unitCenterX + switchHoleCX / 2 - millR;
+      double rightPassX2 = rightBaseCenterX - stabilHoleCX / 2 + millR;
+      CutSquareFullDepth(rightPassX1, leverY, rightPassX2, leverY + passCY);
+    }
+
+    double CutStabilBase(double centerX, double centerY)
+    {
+      double holeX1 = centerX - stabilHoleCX / 2;
+      double centerToTopCY = (stabilHoleCY - stabilCenterCY);
+      double holeY1 = centerY - centerToTopCY; // is cut upside-down
+      double holeX2 = holeX1 + stabilHoleCX;
+      double holeY2 = holeY1 + stabilHoleCY;
+
+      JogZ(safeZ);
+      Comment("Stabilizer base");
+      CutSquare(true, holeX1, holeY1 - switchThinnerCY, holeX2, holeY2 + stabilThinnerCY, switchThinnerDepthZ);
+      double topZ = switchThinnerDepthZ;
+      double bottomZ = finalCutDepthZ;
+      CutSquareMultiPassWithCorners(holeX1, holeY1, holeX2, holeY2, topZ, bottomZ);
+
+      JogZ(safeZ);
+      Comment("Stabilizer bulges");
+      double bulgeCenterY = holeY1 + (stabilHoleCY - stabilBulgeBottomCY) + stabilBulgeCY / 2;
+      CutSafeHole(holeX1, bulgeCenterY, finalCutDepthZ);
+      CutSafeHole(holeX2, bulgeCenterY, finalCutDepthZ);
+      return bulgeCenterY;
+    }
+
     void CutSwitchUnit(double unitX, double unitY, double widthInUnits)
     {
-      // границы отверстия
+      // switch cutout area
       double holeX1 = unitX + ((u1 * widthInUnits) - switchHoleCX) / 2;
       double holeX2 = holeX1 + switchHoleCX;
       double holeY1 = unitY + (u1 - switchHoleCY) / 2;
       double holeY2 = holeY1 + switchHoleCY;
 
       DrawSVGRect(unitX, unitY, unitX + u1 * widthInUnits, unitY + u1); // unit area
-      DrawSVGRect(holeX1, holeY1, holeX2, holeY2);                      // switch cutout
 
       JogZ(safeZ);
-      Comment("Unit pocket");
+      Comment("Switch cutout");
       CutSquare(true, holeX1, holeY1 - switchThinnerCY, holeX2, holeY2 + switchThinnerCY, switchThinnerDepthZ);
-
       double topZ = switchThinnerDepthZ;
       double bottomZ = finalCutDepthZ;
+      CutSquareMultiPassWithCorners(holeX1, holeY1, holeX2, holeY2, topZ, bottomZ);
+    }
+
+    void CutSquareMultiPassWithCorners(
+      double holeX1, double holeY1, double holeX2, double holeY2, double topZ, double bottomZ)
+    {
       CutSquareMultiPass(holeX1, holeY1, holeX2, holeY2, topZ, bottomZ);
 
       double off = millR * (1 - Math.Cos(Math.PI / 4));
-      Comment($"Corner00 off={off}");
-      CutSafeHole(holeX1 - off + millR, holeY1 - off + millR, finalCutDepthZ);
+      Comment($"Corner00 off={D2S(off)}");
+      CutSafeHole(holeX1 - off + millR, holeY1 - off + millR, bottomZ);
       Comment("Corner01");
-      CutSafeHole(holeX1 - off + millR, holeY2 + off - millR, finalCutDepthZ);
+      CutSafeHole(holeX1 - off + millR, holeY2 + off - millR, bottomZ);
       Comment("Corner11");
-      CutSafeHole(holeX2 + off - millR, holeY2 + off - millR, finalCutDepthZ);
+      CutSafeHole(holeX2 + off - millR, holeY2 + off - millR, bottomZ);
       Comment("Corner10");
-      CutSafeHole(holeX2 + off - millR, holeY1 - off + millR, finalCutDepthZ);
+      CutSafeHole(holeX2 + off - millR, holeY1 - off + millR, bottomZ);
     }
 
     void CutSquareFullDepth(double x1, double y1, double x2, double y2)
@@ -214,6 +234,8 @@ namespace KeyboardMillProgram
 
     void CutSafeHole(double x, double y, double finalZ)
     {
+      DrawSVGCircle(x, y, millR);
+
       JogZ(safeZ);
       JogXY(x, y);
       JogZ(slowZ);
@@ -223,6 +245,8 @@ namespace KeyboardMillProgram
 
     void CutSquare(bool jogToStart, double x1, double y1, double x2, double y2, double z)
     {
+      DrawSVGRect(x1, y1, x2, y2);
+
       double millX1 = x1 + millR;
       double millY1 = y1 + millR;
       double millX2 = x2 - millR;
@@ -255,7 +279,7 @@ namespace KeyboardMillProgram
 
     void WriteGCodeLine(string s)
     {
-      if (writeGCode) Console.WriteLine(s);
+      if (produceGCode) Console.WriteLine(s);
     }
 
     readonly NumberFormatInfo dotNFI = 
@@ -263,25 +287,34 @@ namespace KeyboardMillProgram
 
     string D2S(double d) => string.Format(dotNFI, "{0:N}", d);
 
+    void DrawSVGCircle(double centerX, double centerY, double radius)
+    {
+      // SVG Y-coordinate goes top-down, GCode Y-coordinate goes down-top
+      WriteSVGLine(
+        $"<circle cx='{D2S(centerX)}' cy='{D2S(svgHeight - centerY)}' r='{D2S(radius)}'" +
+        $" stroke='darkred' stroke-width='0.1' fill='none' />"
+        );
+    }
+
     void DrawSVGRect(double x1, double y1, double x2, double y2)
     {
       // SVG Y-coordinate goes top-down, GCode Y-coordinate goes down-top
       WriteSVGLine(
         $"<rect x='{D2S(x1)}' y='{D2S(svgHeight - y2)}' width='{D2S(x2 - x1)}'" +
-        $" height='{D2S(y2 - y1)}' stroke='gray' fill='none'/>");
+        $" height='{D2S(y2 - y1)}' stroke='black' stroke-width='0.1' fill='none' />");
     }
     void WriteSVGStart()
     {
       WriteSVGLine($"<svg xmlns='http://www.w3.org/2000/svg'");
-      WriteSVGLine($" width='{D2S(svgWidth)}mm' height='{D2S(svgHeight)}mm'");
-      WriteSVGLine($" viewBox='0 0 {D2S(svgWidth)} {D2S(svgHeight)}'>");
+      WriteSVGLine($" width='{D2S(svgWidth+0.1)}mm' height='{D2S(svgHeight+0.1)}mm'");
+      WriteSVGLine($" viewBox='0 0 {D2S(svgWidth+0.1)} {D2S(svgHeight+0.1)}'>");
     }
 
     void WriteSVGStop() => WriteSVGLine("</svg>");
 
     void WriteSVGLine(string s)
     {
-      if (writeSVG) Console.WriteLine(s);
+      if (produceSVG) Console.WriteLine(s);
     }    
   }
 }
