@@ -25,7 +25,7 @@ namespace KeyboardMillProgram
     const double slowZ = 1;
     const double plateTopZ = 0;
     const double proposedStepDown = 0.3;
-    const double finalCutDepthZ = (plateTopZ - 2.1);
+    const double finalCutDepthZ = (plateTopZ - 2.0);
     const string cuttingSpeedF = "F60";
     const string drillSpeedF = "F10";
 
@@ -40,13 +40,13 @@ namespace KeyboardMillProgram
     const double switchThinnerDepthZ = plateTopZ - 0.5;
 
     // panda stabilizer cutout
-    const double stabilHoleCX = 6.6 - (millOvercut * 2);
+    const double stabilHoleCX = 6.7 - (millOvercut * 2);
     const double stabilHoleCY = 12.5 - (millOvercut * 2);
-    const double stabilCenterCY = 7 - millOvercut;
+    const double stabilCenterCY = 7;
     const double stabilBulgeBottomCY = stabilCenterCY;
     const double stabilBulgeCX = 0.5;
     const double stabilBulgeCY = 2;
-    const double stabilThinnerCY = 3;
+    const double stabilThinnerCY = 4.5;
 
     // keyboard plate sizes
     const double plateBorder = 5;
@@ -65,12 +65,13 @@ namespace KeyboardMillProgram
     Program()
     {
       Comment($"Program starts");
-      WriteSVGStart();
+      WriteSVGStart();                       
 
       //CutU1(0, 0);
       //CutAllKeys();
       //CutStabilBase(0, 0);
       CutSwitchUnitWithStabilizer(0, 0, 2, 24);
+      //CutStabilPair(0, 0, 2, 24);
 
       Comment("Program stops");
       JogZ(safeZ);
@@ -149,8 +150,8 @@ namespace KeyboardMillProgram
       double leverCenterY = CutStabilBase(rightBaseCenterX, unitCenterY);
 
       Comment("Stabilizer lever pass");
-      double passCY = millD;
-      double leverY = leverCenterY - passCY / 2;
+      double passCY = millD * 2;
+      double leverY = leverCenterY - millR;
       double leftPassX1 = leftBaseCenterX + stabilHoleCX / 2 - millR;
       double leftPassX2 = unitCenterX - switchHoleCX / 2 + millR;
       CutSquareFullDepth(leftPassX1, leverY, leftPassX2, leverY + passCY);
@@ -162,7 +163,7 @@ namespace KeyboardMillProgram
     double CutStabilBase(double centerX, double centerY)
     {
       double holeX1 = centerX - stabilHoleCX / 2;
-      double centerToTopCY = (stabilHoleCY - stabilCenterCY);
+      double centerToTopCY = stabilCenterCY;
       double holeY1 = centerY - centerToTopCY; // is cut upside-down
       double holeX2 = holeX1 + stabilHoleCX;
       double holeY2 = holeY1 + stabilHoleCY;
@@ -176,7 +177,7 @@ namespace KeyboardMillProgram
 
       JogZ(safeZ);
       Comment("Stabilizer bulges");
-      double bulgeCenterY = holeY1 + (stabilHoleCY - stabilBulgeBottomCY) + stabilBulgeCY / 2;
+      double bulgeCenterY = holeY1 + (stabilHoleCY - stabilBulgeBottomCY) - stabilBulgeCY / 2;
       CutSafeHole(holeX1, bulgeCenterY, finalCutDepthZ);
       CutSafeHole(holeX2, bulgeCenterY, finalCutDepthZ);
       return bulgeCenterY;
