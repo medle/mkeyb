@@ -41,12 +41,13 @@ namespace KeyboardMillProgram
 
     // panda stabilizer cutout
     const double stabilHoleCX = 6.7 - (millOvercut * 2);
-    const double stabilHoleCY = 12.5 - (millOvercut * 2);
+    const double stabilHoleCY = 12.2 - (millOvercut * 2);
     const double stabilCenterCY = 7;
-    const double stabilBulgeBottomCY = stabilCenterCY;
+    const double stabilBulgeBottomEdgeCY = stabilCenterCY;
     const double stabilBulgeCX = 0.5;
     const double stabilBulgeCY = 2;
-    const double stabilThinnerCY = 4.5;
+    const double stabilThinnerCY = 1;
+    const double stabilThinnerDepthZ = (plateTopZ - 0.2);
 
     // keyboard plate sizes
     const double plateBorder = 5;
@@ -59,7 +60,7 @@ namespace KeyboardMillProgram
     const double svgWidth = u1 * 18.5 + plateBorder * 2;
     const double svgHeight = u1 * 6.5 + plateBorder * 2 + plateFrontWallCY + plateBackWallCY;
 
-    bool produceGCode = true;
+    bool produceGCode = false;
     bool produceSVG => !produceGCode;
 
     Program()
@@ -68,9 +69,9 @@ namespace KeyboardMillProgram
       WriteSVGStart();                       
 
       //CutU1(0, 0);
-      //CutAllKeys();
+      CutAllKeys();
       //CutStabilBase(0, 0);
-      CutSwitchUnitWithStabilizer(0, 0, 2, 24);
+      //CutSwitchUnitWithStabilizer(0, 0, 2, 24);
       //CutStabilPair(0, 0, 2, 24);
 
       Comment("Program stops");
@@ -147,40 +148,39 @@ namespace KeyboardMillProgram
       double unitCenterY = unitY + u1 / 2;
 
       CutStabilBase(leftBaseCenterX, unitCenterY);
-      double leverCenterY = CutStabilBase(rightBaseCenterX, unitCenterY);
+      CutStabilBase(rightBaseCenterX, unitCenterY);
 
       Comment("Stabilizer lever pass");
-      double passCY = millD * 2;
-      double leverY = leverCenterY - millR;
+      double passCY = stabilBulgeCY * 2;
+      double passY = unitCenterY - stabilBulgeCY;
       double leftPassX1 = leftBaseCenterX + stabilHoleCX / 2 - millR;
       double leftPassX2 = unitCenterX - switchHoleCX / 2 + millR;
-      CutSquareFullDepth(leftPassX1, leverY, leftPassX2, leverY + passCY);
+      CutSquareFullDepth(leftPassX1, passY, leftPassX2, passY + passCY);
       double rightPassX1 = unitCenterX + switchHoleCX / 2 - millR;
       double rightPassX2 = rightBaseCenterX - stabilHoleCX / 2 + millR;
-      CutSquareFullDepth(rightPassX1, leverY, rightPassX2, leverY + passCY);
+      CutSquareFullDepth(rightPassX1, passY, rightPassX2, passY + passCY);
     }
 
-    double CutStabilBase(double centerX, double centerY)
+    void CutStabilBase(double centerX, double centerY)
     {
       double holeX1 = centerX - stabilHoleCX / 2;
-      double centerToTopCY = stabilCenterCY;
-      double holeY1 = centerY - centerToTopCY; // is cut upside-down
+      double stabilCenterToTopCY = (stabilHoleCY - stabilCenterCY);
+      double holeY1 = centerY - stabilCenterToTopCY; // is cut upside-down
       double holeX2 = holeX1 + stabilHoleCX;
       double holeY2 = holeY1 + stabilHoleCY;
 
       JogZ(safeZ);
       Comment("Stabilizer base");
-      CutSquare(true, holeX1, holeY1 - switchThinnerCY, holeX2, holeY2 + stabilThinnerCY, switchThinnerDepthZ);
-      double topZ = switchThinnerDepthZ;
+      CutSquare(true, holeX1, holeY1 - switchThinnerCY, holeX2, holeY2 + stabilThinnerCY, stabilThinnerDepthZ);
+      double topZ = stabilThinnerDepthZ;
       double bottomZ = finalCutDepthZ;
-      CutSquareMultiPassWithCorners(holeX1, holeY1, holeX2, holeY2, topZ, bottomZ);
+      CutSquareMultiPass(holeX1, holeY1, holeX2, holeY2, topZ, bottomZ);
 
       JogZ(safeZ);
       Comment("Stabilizer bulges");
-      double bulgeCenterY = holeY1 + (stabilHoleCY - stabilBulgeBottomCY) - stabilBulgeCY / 2;
+      double bulgeCenterY = centerY - (stabilBulgeCY / 2); // is cut upside-down
       CutSafeHole(holeX1, bulgeCenterY, finalCutDepthZ);
       CutSafeHole(holeX2, bulgeCenterY, finalCutDepthZ);
-      return bulgeCenterY;
     }
 
     void CutSwitchUnit(double unitX, double unitY, double widthInUnits)
