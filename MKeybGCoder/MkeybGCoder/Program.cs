@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KeyboardMillProgram
+namespace MKeybGCoder
 {
   class Program
   {
@@ -60,7 +60,8 @@ namespace KeyboardMillProgram
     const double svgWidth = u1 * 18.5 + plateBorder * 2;
     const double svgHeight = u1 * 6.5 + plateBorder * 2 + plateFrontWallCY + plateBackWallCY;
 
-    bool produceGCode = false;
+    // produce GCode or SVG picture
+    bool produceGCode = true;
     bool produceSVG => !produceGCode;
 
     Program()
@@ -69,9 +70,9 @@ namespace KeyboardMillProgram
       WriteSVGStart();                       
 
       //CutU1(0, 0);
-      CutAllKeys();
-      //CutStabilBase(0, 0);
-      //CutSwitchUnitWithStabilizer(0, 0, 2, 24);
+      //CutAllKeys();
+      //CutStabilBase(0, 0, true);
+      CutSwitchUnitWithStabilizer(0, 0, 2, 24);
       //CutStabilPair(0, 0, 2, 24);
 
       Comment("Program stops");
@@ -147,8 +148,8 @@ namespace KeyboardMillProgram
       double rightBaseCenterX = leftBaseCenterX + leverWidth;
       double unitCenterY = unitY + u1 / 2;
 
-      CutStabilBase(leftBaseCenterX, unitCenterY);
-      CutStabilBase(rightBaseCenterX, unitCenterY);
+      CutStabilBase(leftBaseCenterX, unitCenterY, true);
+      CutStabilBase(rightBaseCenterX, unitCenterY, false);
 
       Comment("Stabilizer lever pass");
       double passCY = stabilBulgeCY * 2;
@@ -161,7 +162,7 @@ namespace KeyboardMillProgram
       CutSquareFullDepth(rightPassX1, passY, rightPassX2, passY + passCY);
     }
 
-    void CutStabilBase(double centerX, double centerY)
+    void CutStabilBase(double centerX, double centerY, bool isLeftBase)
     {
       double holeX1 = centerX - stabilHoleCX / 2;
       double stabilCenterToTopCY = (stabilHoleCY - stabilCenterCY);
@@ -179,8 +180,8 @@ namespace KeyboardMillProgram
       JogZ(safeZ);
       Comment("Stabilizer bulges");
       double bulgeCenterY = centerY - (stabilBulgeCY / 2); // is cut upside-down
-      CutSafeHole(holeX1, bulgeCenterY, finalCutDepthZ);
-      CutSafeHole(holeX2, bulgeCenterY, finalCutDepthZ);
+      if(isLeftBase) CutSafeHole(holeX1, bulgeCenterY, finalCutDepthZ);
+      else           CutSafeHole(holeX2, bulgeCenterY, finalCutDepthZ);
     }
 
     void CutSwitchUnit(double unitX, double unitY, double widthInUnits)
