@@ -18,7 +18,7 @@ namespace MKeybGCoder
     // mill bit
     const double millD = 3;
     const double millR = millD / 2;
-    const double millOvercut = 0.1; // 3mm bit overcuts 0.1mm
+    const double millOvercut = 0.05; // 3mm bit overcuts 0.05mm (decided with new switches)
 
     // cutting parameters
     const double safeZ = 5;
@@ -61,25 +61,72 @@ namespace MKeybGCoder
     const double svgHeight = u1 * 6.5 + plateBorder * 2 + plateFrontWallCY + plateBackWallCY;
 
     // produce GCode or SVG picture
-    bool produceGCode = true;
+    bool produceGCode = false;
     bool produceSVG => !produceGCode;
 
     Program()
     {
       Comment($"Program starts");
-      WriteSVGStart();                       
+      WriteSVGStart();
 
       //CutU1(0, 0);
       //CutAllKeys();
       //CutStabilBase(0, 0, true);
-      CutSwitchUnitWithStabilizer(0, 0, 2, 24);
+      //CutSwitchUnitWithStabilizer(0, 0, 2, 24);
       //CutStabilPair(0, 0, 2, 24);
+
+      //CutKeyCapHolderBase(0, 0);
+      CutKeyCapHolderClamp(0, 0);
 
       Comment("Program stops");
       JogZ(safeZ);
       JogXY(0, 0);
 
       WriteSVGStop();
+    }
+
+    double keyCapClampHolesInterCenterCX = 25;
+
+    void CutKeyCapHolderClamp(double xLeft, double yBottom)
+    {
+      double holeCX = 12.5;
+      double holeCY = 14.5;
+
+      double drillX1 = xLeft + millR;
+      double drillX2 = drillX1 + keyCapClampHolesInterCenterCX;
+      double drillY = yBottom + holeCY / 2;
+
+      double x1 = drillX1 + (keyCapClampHolesInterCenterCX / 2) - (holeCX / 2);
+      double y1 = yBottom;
+      double x2 = x1 + holeCX;
+      double y2 = y1 + holeCY;
+
+      CutSquareMultiPass(x1, y1, x2, y2, 0, finalCutDepthZ);
+
+      CutSafeHole(drillX1, drillY, finalCutDepthZ);
+      CutSafeHole(drillX2, drillY, finalCutDepthZ);
+    }
+
+    void CutKeyCapHolderBase(double xLeft, double yBottom)
+    {
+      // width and height of keycap bottom square
+      double holeSize = 17.8 - (millOvercut * 2);
+
+      double drillX1 = xLeft + millR;
+      double drillX2 = drillX1 + keyCapClampHolesInterCenterCX;
+      double drillY = yBottom + holeSize / 2;
+
+      double x1 = drillX1 + (keyCapClampHolesInterCenterCX / 2) - (holeSize / 2);
+      double y1 = yBottom;
+      double x2 = x1 + holeSize;
+      double y2 = y1 + holeSize;
+
+      CutSquare(true, x1, y1, x2, y2, -1);
+      CutSquare(false, x1, y1, x2, y2, -2);
+      OverCutSquareCorners(x1, y1, x2, y2, -2);
+
+      CutSafeHole(drillX1, drillY, -3);
+      CutSafeHole(drillX2, drillY, -3);
     }
 
     void CutAllKeys()
@@ -202,12 +249,19 @@ namespace MKeybGCoder
       CutSquareMultiPassWithCorners(holeX1, holeY1, holeX2, holeY2, topZ, bottomZ);
     }
 
+    double CornerOverCutDiagonalOffset => millR * (1 - Math.Cos(Math.PI / 4));
+
     void CutSquareMultiPassWithCorners(
       double holeX1, double holeY1, double holeX2, double holeY2, double topZ, double bottomZ)
     {
       CutSquareMultiPass(holeX1, holeY1, holeX2, holeY2, topZ, bottomZ);
+      OverCutSquareCorners(holeX1, holeY1, holeX2, holeY2, bottomZ);
+    }
 
-      double off = millR * (1 - Math.Cos(Math.PI / 4));
+    void OverCutSquareCorners(
+      double holeX1, double holeY1, double holeX2, double holeY2, double bottomZ)
+    {
+      double off = CornerOverCutDiagonalOffset;
       Comment($"Corner00 off={D2S(off)}");
       CutSafeHole(holeX1 - off + millR, holeY1 - off + millR, bottomZ);
       Comment("Corner01");
