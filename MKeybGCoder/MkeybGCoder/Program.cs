@@ -25,7 +25,7 @@ namespace MKeybGCoder
     const double slowZ = 1;
     const double plateTopZ = 0;
     const double proposedStepDown = 0.3;
-    const double finalCutDepthZ = (plateTopZ - 2.0);
+    const double finalCutDepthZ = (plateTopZ - 2.2);
     const string cuttingSpeedF = "F60";
     const string drillSpeedF = "F10";
 
