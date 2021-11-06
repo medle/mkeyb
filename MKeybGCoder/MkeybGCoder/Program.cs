@@ -12,7 +12,8 @@ namespace MKeybGCoder
   {
     static void Main(string[] args)
     {
-      new Program();
+      bool gcode = (args.Length == 1 && args[0] == "-g");
+      new Program(gcode);
     }
 
     // mill bit
@@ -61,12 +62,14 @@ namespace MKeybGCoder
     const double svgHeight = u1 * 6.5 + plateBorder * 2 + plateFrontWallCY + plateBackWallCY;
 
     // produce GCode or SVG picture
-    bool produceGCode = true;
+    bool produceGCode = false;
     bool produceSVG => !produceGCode;
 
-    Program()
+    Program(bool gcode)
     {
-      Comment($"Program starts");
+      produceGCode = gcode;
+      Comment($"Program was generated {DateTime.Now.ToString("dd.MM.yy HH:mm")}");
+      Comment($"Tool diameter={millD}mm");
       WriteSVGStart();
 
       //CutU1(0, 0);
@@ -75,8 +78,9 @@ namespace MKeybGCoder
       //CutSwitchUnitWithStabilizer(0, 0, 2, 24);
       //CutStabilPair(0, 0, 2, 24);
 
-      CutKeyCapHolderBase(0, 0);
-      //CutKeyCapHolderClamp(0, 0);
+      CutKeyCapHolderBase(0, 0, 3, 17.9, 0.9); // row3
+
+      //CutKeyCapHolderClamp(0, 0); 
 
       Comment("Program stops");
       JogZ(safeZ);
@@ -85,48 +89,69 @@ namespace MKeybGCoder
       WriteSVGStop();
     }
 
-    double keyCapClampHolesInterCenterCX = 25;
+    double keyCapClampHolesCenterToCenterCX = 25;
+    double keyCapTopCY = 14.5;
+    double keyCapTopCX = 12.5;
 
     void CutKeyCapHolderClamp(double xLeft, double yBottom)
     {
-      double holeCX = 12.5;
-      double holeCY = 14.5;
+      Comment($"KeyCapHolderClamp");
+  
+      double holeCX = 13; // left and right sides are holding
+      double holeCY = 17; // top and bottom sides are non-holding due to varying wall angles
 
-      double drillX1 = xLeft + millR;
-      double drillX2 = drillX1 + keyCapClampHolesInterCenterCX;
-      double drillY = yBottom + holeCY / 2;
-
-      double x1 = drillX1 + (keyCapClampHolesInterCenterCX / 2) - (holeCX / 2);
-      double y1 = yBottom;
+      double keyCapGapCY = (holeCY / 2) - (keyCapTopCY / 2);
+      double x1 = xLeft + (keyCapClampHolesCenterToCenterCX / 2) - (holeCX / 2);
+      double y1 = yBottom - keyCapGapCY; // place yBottom at KeyCapBottom zero
       double x2 = x1 + holeCX;
       double y2 = y1 + holeCY;
 
       CutSquareMultiPass(x1, y1, x2, y2, 0, finalCutDepthZ);
 
+      DrawSVGRect(x1, y1 + keyCapGapCY, x2, y2 - keyCapGapCY); // key cap top area
+      DrawSVGCircle(xLeft, yBottom, 0.5); // mark zero point
+
+      double drillX1 = xLeft;
+      double drillX2 = drillX1 + keyCapClampHolesCenterToCenterCX;
+      double drillY = y1 + holeCY / 2;
+
+      // clamp skrew holes
       CutSafeHole(drillX1, drillY, finalCutDepthZ);
       CutSafeHole(drillX2, drillY, finalCutDepthZ);
+
+      // reference geometry markings
+      CutSafeHole(x1, yBottom + millR, 0.5);
+      CutSafeHole(x2, yBottom + millR, 0.5);
     }
 
-    void CutKeyCapHolderBase(double xLeft, double yBottom)
+    void CutKeyCapHolderBase(
+      double zeroX, double zeroY, double bottomToZeroCY, double holeCY, double depthZ)
     {
+      Comment($"KeyCapHolderBase offCY={D2S(bottomToZeroCY)} depthZ={D2S(depthZ)}");
+
       // width and height of keycap bottom square
-      double holeSize = 17.8 - (millOvercut * 2);
+      double holeCX = 17.9 - (millOvercut * 2);
 
-      double drillX1 = xLeft + millR;
-      double drillX2 = drillX1 + keyCapClampHolesInterCenterCX;
-      double drillY = yBottom + holeSize / 2;
+      double x1 = zeroX + (keyCapClampHolesCenterToCenterCX / 2) - (holeCX / 2);
+      double y1 = zeroY - bottomToZeroCY;
+      double x2 = x1 + holeCX;
+      double y2 = y1 + holeCY;
 
-      double x1 = drillX1 + (keyCapClampHolesInterCenterCX / 2) - (holeSize / 2);
-      double y1 = yBottom;
-      double x2 = x1 + holeSize;
-      double y2 = y1 + holeSize;
+      CutSquareZZ(true, x1, y1, x2, y2, -depthZ, 0);
+      CutSquareZZ(false, x1, y1, x2, y2, -1 - depthZ, -1);
+      CutSquareZZ(false, x1, y1, x2, y2, -2 - depthZ, -2);
+      OverCutSquareCorners(x1, y1, x2, y2, -2 - depthZ);
 
-      CutSquare(true, x1, y1, x2, y2, -1);
-      CutSquare(false, x1, y1, x2, y2, -2);
-      OverCutSquareCorners(x1, y1, x2, y2, -2);
+      double drillX1 = zeroX;
+      double drillX2 = drillX1 + keyCapClampHolesCenterToCenterCX;
+      double drillY = zeroY + (keyCapTopCY / 2);
 
       CutSafeHole(drillX1, drillY, -3);
       CutSafeHole(drillX2, drillY, -3);
+
+      double keyCapX = zeroX + (keyCapClampHolesCenterToCenterCX / 2) - (keyCapTopCX / 2);
+      DrawSVGRect(keyCapX, zeroY, keyCapX + keyCapTopCX, zeroY + keyCapTopCY); // key cap top area
+      DrawSVGCircle(zeroX, zeroY, 0.5); // mark zero point
     }
 
     void CutAllKeys()
@@ -300,6 +325,9 @@ namespace MKeybGCoder
     }
 
     void CutSquare(bool jogToStart, double x1, double y1, double x2, double y2, double z)
+      => CutSquareZZ(jogToStart, x1, y1, x2, y2, z, z);
+
+    void CutSquareZZ(bool jogToStart, double x1, double y1, double x2, double y2, double z1, double z2)
     {
       DrawSVGRect(x1, y1, x2, y2);
 
@@ -314,12 +342,11 @@ namespace MKeybGCoder
         JogZ(slowZ);
       }
 
-      CutF(millX1, millY1, z, drillSpeedF);
-      Cut(millX1, millY1, z); // inside
-      Cut(millX1, millY2, z); // up
-      Cut(millX2, millY2, z); // right
-      Cut(millX2, millY1, z); // down
-      Cut(millX1, millY1, z); // left
+      CutF(millX1, millY1, z1, drillSpeedF);
+      Cut(millX1, millY2, z2); // up (z1 -> z2)
+      Cut(millX2, millY2, z2); // right
+      Cut(millX2, millY1, z1); // down (z2 -> z1)
+      Cut(millX1, millY1, z1); // left
     }
 
     void JogZ(double z) => WriteGCodeLine($"G0 Z{D2S(z)}");
