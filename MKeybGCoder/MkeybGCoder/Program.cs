@@ -61,7 +61,7 @@ namespace MKeybGCoder
     const double svgHeight = u1 * 6.5 + plateBorder * 2 + plateFrontWallCY + plateBackWallCY;
 
     // produce GCode or SVG picture
-    bool produceGCode = false;
+    bool produceGCode = true;
     bool produceSVG => !produceGCode;
 
     Program()
@@ -75,8 +75,8 @@ namespace MKeybGCoder
       //CutSwitchUnitWithStabilizer(0, 0, 2, 24);
       //CutStabilPair(0, 0, 2, 24);
 
-      //CutKeyCapHolderBase(0, 0);
-      CutKeyCapHolderClamp(0, 0);
+      CutKeyCapHolderBase(0, 0);
+      //CutKeyCapHolderClamp(0, 0);
 
       Comment("Program stops");
       JogZ(safeZ);
