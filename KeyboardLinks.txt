@@ -1,0 +1,114 @@
+
+-------------------------------
+30.09.2021
+
+FrereCAD Text Tutorial
+https://www.youtube.com/watch?v=pY4RzmrokHs
+
+-------------------------------
+24.09.2021
+
+Cherry MX clear switch
+https://aliexpress.ru/item/33001714186.html?spm=a2g0o.productlist.0.0.f8b1967anTRwVd&algo_pvid=edd1596d-7dc8-4c2c-8ccc-4c5db0a96099&algo_expid=edd1596d-7dc8-4c2c-8ccc-4c5db0a96099-7&btsid=0b8b036d16325141821726366ee059&ws_ab_test=searchweb0_0,searchweb201602_,searchweb201603_
+https://aliexpress.ru/item/32948293077.html?algo_expid=2a36c348-40b7-49ba-86fe-8ee4dd529fef-37&algo_pvid=2a36c348-40b7-49ba-86fe-8ee4dd529fef&btsid=0b8b158f16325150111304558ef915&item_id=32948293077&sku_id=66326229624&spm=a2g0o.productlist.0.0.7cc6c469T46mhr&ws_ab_test=searchweb0_0%2Csearchweb201602_%2Csearchweb201603_
+https://aliexpress.ru/item/1005003302995009.html?algo_expid=edd1596d-7dc8-4c2c-8ccc-4c5db0a96099-57&algo_pvid=edd1596d-7dc8-4c2c-8ccc-4c5db0a96099&btsid=0b8b036d16325141821726366ee059&item_id=1005003302995009&sku_id=12000025102726112&spm=a2g0o.productlist.0.0.f8b1967anTRwVd&ws_ab_test=searchweb0_0%2Csearchweb201602_%2Csearchweb201603_
+https://aliexpress.ru/item/1005002133803858.html?_ga=2.158238074.1986362371.1632513921-453177858.1627656668&_gac=1.53082842.1631518536.CjwKCAjw7fuJBhBdEiwA2lLMYb4XxlxevLnSilCTPActsmgnDQWW-ZMWU1wMBoji7j05LATXHqnHlRoCrQgQAvD_BwE&item_id=1005002133803858&sku_id=12000018849493392&spm=a2g0o.store_pc_groupList.8148356.5.2029e3c222pksF
+
+Резиновое уплотнительное кольцо
+https://aliexpress.ru/item/32826068947.html?ad_pvid=202109241330316760589207910300009274952_40&algo_expid=2c2c5a4b-74d5-4348-99cf-a004d1410b2f-19&algo_pvid=2c2c5a4b-74d5-4348-99cf-a004d1410b2f&btsid=0b8b158f16325154315187076ef915&item_id=32826068947&s=p&sku_id=64917651820&spm=a2g0o.productlist.0.0.7cc6c469T46mhr&ws_ab_test=searchweb0_0%2Csearchweb201602_%2Csearchweb201603_
+
+-------------------------------
+23.09.2021
+
+CHERRY MX Developer Information
+https://www.cherrymx.de/en/dev.html
+
+-------------------------------
+06.09.2021
+
+How to build QMK
+https://mkbd.ru/post/qmk/
+
+Подробная инструкция по изготовлению клавиатуры qmk
+https://habr.com/ru/post/515246/
+
+VIA & QMK control
+https://caniusevia.com/docs/configuring_qmk
+
+https://beta.docs.qmk.fm/using-qmk/guides/keyboard-building/hand_wire
+https://beta.docs.qmk.fm/developing-qmk/for-a-deeper-understanding/how_a_matrix_works
+
+QMK Diode Switch connections
+https://blog.roastpotatoes.co/guide/2015/11/04/how-to-handwire-a-planck/
+
+-------------------------------
+06.09.2021
+keyboard plate builder
+
+The switch holes are measured typically center to center, 19.05mm or .75in between each center. Key units translate pretty nicely too:
+1.00u = 0.7500in || 19.0500mm
+1.25u = 0.9375in || 23.8125mm
+1.50u = 1.1250in || 28.5750mm
+1.75u = 1.3125in || 33.3375mm
+2.00u = 1.5000in || 38.1000mm
+etc.
+If you just imagine the square 0.551in || 14mm cutout is your base, layout your keyboard plate with that, the additional cutouts are just extra room for the switch clips. They shouldn't affect the actual layout anywhere you don't plan to cut screw holes or etc.
+Make heavy use of offset and reference lines, you'll be good to go.
+
+Plate & Case Builder
+http://builder.swillkb.com/
+http://www.keyboard-layout-editor.com/
+
+------------------------------------
+07.06.2021
+
+Grey eng keycaps
+https://aliexpress.ru/item/1005002713315754.html?spm=a2g0o.productlist.0.0.3e737395VrbT1B&algo_pvid=baebd78c-8d9e-47b9-b7a2-c5d52770681f&algo_expid=baebd78c-8d9e-47b9-b7a2-c5d52770681f-4&btsid=0b8b035916308653554626107ed65e&ws_ab_test=searchweb0_0,searchweb201602_,searchweb201603_
+
+White-blue english
+https://aliexpress.ru/item/1005002990681680.html?spm=a2g2w.detail.1000014.11.751e6f900ECxBM&gps-id=pcDetailBottomMoreOtherSeller&scm=1007.34525.239210.0&scm_id=1007.34525.239210.0&scm-url=1007.34525.239210.0&pvid=e21f5b44-b670-4fbf-9161-5aa3e3b70bda&_t=gps-id:pcDetailBottomMoreOtherSeller,scm-url:1007.34525.239210.0,pvid:e21f5b44-b670-4fbf-9161-5aa3e3b70bda,tpp_buckets:24525%230%23239210%2327_21387%230%23233228%2396_4452%230%23226710%230_4452%233474%2315675%23120_4452%234862%2324463%23396_4452%233098%239599%23286_4452%235105%2323438%23314_4452%233564%2316062%23512&scenario=pcDetailBottomMoreOtherSeller&tpp_rcmd_bucket_id=239210
+
+White-black russian pbt
+https://aliexpress.ru/item/1005003066522544.html?spm=a2g0o.productlist.0.0.3e737395VrbT1B&algo_pvid=15e26c5c-7bcc-4242-a3c0-ea2963e5bd72&algo_expid=15e26c5c-7bcc-4242-a3c0-ea2963e5bd72-41&btsid=0b8b035916308658071003783ed65e&ws_ab_test=searchweb0_0,searchweb201602_,searchweb201603_
+
+Colorful english
+https://aliexpress.ru/item/1005002922115524.html?spm=a2g2w.detail.1000014.27.13b8517cYHn71w&gps-id=pcDetailBottomMoreOtherSeller&scm=1007.34525.239210.0&scm_id=1007.34525.239210.0&scm-url=1007.34525.239210.0&pvid=ce32ec29-9d21-4b68-9904-d10efe798e96&_t=gps-id:pcDetailBottomMoreOtherSeller,scm-url:1007.34525.239210.0,pvid:ce32ec29-9d21-4b68-9904-d10efe798e96,tpp_buckets:24525%230%23239210%2327_21387%230%23233228%2364_4452%230%23226710%230_4452%233474%2315675%23120_4452%234862%2324463%23396_4452%233098%239599%23286_4452%235105%2323438%23314_4452%233564%2316062%23512&scenario=pcDetailBottomMoreOtherSeller&tpp_rcmd_bucket_id=239210
+
+Light gray russian
+https://aliexpress.ru/item/1005003139125086.html?spm=a2g0o.productlist.0.0.3e737395VrbT1B&algo_pvid=15e26c5c-7bcc-4242-a3c0-ea2963e5bd72&algo_expid=15e26c5c-7bcc-4242-a3c0-ea2963e5bd72-38&btsid=0b8b035916308658071003783ed65e&ws_ab_test=searchweb0_0,searchweb201602_,searchweb201603_
+
+Russian white/blue-red
+https://aliexpress.ru/item/32901614195.html?_t=gps-id%3AaerPdpSubstituteRcmd%2Cscm-url%3A1007.33958.210224.0%2Cpvid%3A640e3ee2-b751-45b3-9610-7c567e81a081%2Ctpp_buckets%3A21387%230%23233228%2316&gps-id=aerPdpSubstituteRcmd&item_id=32901614195&pvid=640e3ee2-b751-45b3-9610-7c567e81a081&scm=1007.33958.210224.0&scm-url=1007.33958.210224.0&scm_id=1007.33958.210224.0&sku_id=65815002532&spm=a2g2w.detail.1000060.2.35907c09cPAJ5p
+
+English light gray + red enter/esc
+https://aliexpress.ru/item/32835265683.html?algo_expid=fff11bfc-ee38-452a-ae12-d1c3d0960b83-31&algo_pvid=fff11bfc-ee38-452a-ae12-d1c3d0960b83&btsid=0b8b037216308681770761728e93d0&item_id=32835265683&sku_id=65667671279&spm=a2g0o.productlist.0.0.1a4217f4UTdF8D&ws_ab_test=searchweb0_0%2Csearchweb201602_%2Csearchweb201603_
+
+Цветной набор modifier keys
+https://aliexpress.ru/item/32885120929.html?spm=a2g2w.detail.1000023.8.70db7c09khfa3G&_ga=2.247021764.1109536868.1630863688-453177858.1627656668
+
+Цветные клавиши enter
+https://aliexpress.ru/item/32834396340.html?spm=a2g0o.productlist.0.0.592572c0dknW5j&algo_pvid=70a006ba-4a00-4d91-b3ca-df2e974cca52&algo_expid=70a006ba-4a00-4d91-b3ca-df2e974cca52-2&btsid=0b8b036316309541106597978e7a0e&ws_ab_test=searchweb0_0,searchweb201602_,searchweb201603_
+
+Красный enter
+https://aliexpress.ru/item/32906116744.html?_t=gps-id%3ApcDetailBottomMoreThisSeller%2Cscm-url%3A1007.13339.169870.0%2Cpvid%3Aabbe65e3-1b8e-4df8-8949-a3c9c6fb7ef2%2Ctpp_buckets%3A21387%230%23233228%2393&gps-id=pcDetailBottomMoreThisSeller&item_id=32906116744&pvid=abbe65e3-1b8e-4df8-8949-a3c9c6fb7ef2&scm=1007.13339.169870.0&scm-url=1007.13339.169870.0&scm_id=1007.13339.169870.0&sku_id=65872806818&spm=a2g2w.detail.0.0.1f6f68cco8p6jW
+
+KPrepublic russian white/black-red (red enter/esc)
+https://aliexpress.ru/item/32877690577.html?_t=gps-id%3AaerPdpSubstituteRcmd%2Cscm-url%3A1007.33958.210224.0%2Cpvid%3A0cd99a5a-5d9f-4912-862a-529af33e0974%2Ctpp_buckets%3A21387%230%23233228%2356&gps-id=aerPdpSubstituteRcmd&item_id=32877690577&pvid=0cd99a5a-5d9f-4912-862a-529af33e0974&scm=1007.33958.210224.0&scm-url=1007.33958.210224.0&scm_id=1007.33958.210224.0&sku_id=65724169949&spm=a2g2w.detail.1000060.1.70db7c09khfa3G
+
+KPrepublic english muted 
+https://aliexpress.ru/item/32835265683.html?item_id=32835265683&sku_id=65667671279&spm=a2g0o.store_pc_home.productList_5658757.subject_20
+https://aliexpress.ru/item/32906202294.html?spm=a2g0o.productlist.0.0.1a4217f4UTdF8D&algo_pvid=062080dd-8726-409a-9875-7e6790008ff1&algo_expid=062080dd-8726-409a-9875-7e6790008ff1-44&btsid=0b8b035616308688972065964edcab&ws_ab_test=searchweb0_0,searchweb201602_,searchweb201603_
+
+KRepublic retro english
+https://www.aliexpress.com/item/32869282345.html?spm=a2g0o.productlist.0.0.60836b42OcohmR&algo_pvid=7e45da5a-d9eb-40ba-bbd3-55c91152de2c&algo_exp_id=7e45da5a-d9eb-40ba-bbd3-55c91152de2c-34&pdp_ext_f=%7B%22sku_id%22%3A%2265482918071%22%7D
+
+Корпус и плата клавиатуры
+https://aliexpress.ru/item/1005003223173186.html?item_id=1005003223173186&sku_id=12000024730622149&spm=a2g0o.store_pc_home.productList_5461560.subject_2
+
+Набор стабилизаторов
+https://aliexpress.ru/item/1005001543613992.html?_t=gps-id%3AaerPdpSubstituteRcmd%2Cscm-url%3A1007.33958.210224.0%2Cpvid%3A1755d111-afa9-4189-8cbd-7d1551b5a0aa%2Ctpp_buckets%3A21387%230%23233228%2331&gps-id=aerPdpSubstituteRcmd&item_id=1005001543613992&pvid=1755d111-afa9-4189-8cbd-7d1551b5a0aa&scm=1007.33958.210224.0&scm-url=1007.33958.210224.0&scm_id=1007.33958.210224.0&sku_id=12000016519949082&spm=a2g2w.detail.1000060.1.7c484d33HBnRTC
+
+Корпус 87 нижние лампы
+https://www.aliexpress.com/item/1005002975509199.html?spm=a2g0o.productlist.0.0.60836b42OcohmR&algo_pvid=4286789d-0a4b-4433-99d9-14c3d7bdbc59&algo_exp_id=4286789d-0a4b-4433-99d9-14c3d7bdbc59-52&pdp_ext_f=%7B%22sku_id%22%3A%2212000023032624069%22%7D
+
+-------------------------------------
