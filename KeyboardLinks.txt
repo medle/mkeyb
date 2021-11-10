@@ -1,5 +1,14 @@
 
 -------------------------------
+07.11.2021
+
+Keyboard diode
+https://www.chipdip.ru/product/1n4148
+
+Arduino Micro Pro 470 руб.
+https://ardmag.ru/arduino/1117.html
+
+-------------------------------
 30.09.2021
 
 FrereCAD Text Tutorial
