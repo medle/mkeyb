@@ -1,0 +1,52 @@
+
+20.11.2021
+After ProMicro was flashed with QMK and you want to flash it with 
+Arduino sketch, start uploading from Arduino IDE and briefly
+connect RST and GND board pins - programming port will open
+and Arduino IDE will detect it.
+
+To make ProMicro blink with RXLED:
+#undef LED_BUILTIN
+#define LED_BUILTIN 17 // RXLED
+https://codebender.cc/sketch:77845#Pro%20Micro%20Blink.ino
+
+16.11.2021
+
+Cherry full-size keyboard schematic for atmega32u4
+gh80_3000
+https://easyeda.com/farmakon/GH80_3000-4f3cee521afd4be3858c4b5cc3b76f9e
+
+14.11.2021
+
+Arduino Pro Micro pinout and using 18+2 pins
+https://golem.hu/article/pro-micro-pinout/
+https://golem.hu/guide/pro-micro-upgrade/
+
+13.11.2021
+QMK_MSYS for Windows / Build environment / Getting started
+https://msys.qmk.fm/guide.html#next-steps
+Start QMK MSYS...
+qmk setup
+qmk compile
+make git-submodules
+make git-submodule
+make xelus/pachi/mini_32u4:default
+
+Building your first firmware
+https://docs.qmk.fm/#/newbs_building_firmware
+
+Flashing ProMicro:
+1) Start QMK Toolbox
+2) Menu/Load drivers...
+3) Open .hex file
+4) Check "Auto flash" box
+5) Touch briefly RST pin to GND pin on ProMicro
+   *** Caterina device connected (usbser):... COM9...
+   *** Attemting to flash, please don't remove device
+   >>> avrdude...
+
+Start QMK MSYS...
+qmk config user.keyboard=medle80
+qmk config user.keymap=default
+qmk compile
+
