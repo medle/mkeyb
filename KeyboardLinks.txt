@@ -1,5 +1,18 @@
 
 -------------------------------
+14.11.2021
+
+Arduino MKR Zero: UF2 bootloader & CircuitPython & KMK formware
+https://learn.adafruit.com/installing-circuitpython-on-samd21-boards/installing-the-uf2-bootloader
+https://github.com/adafruit/uf2-samdx1/releases
+https://learn.adafruit.com/installing-circuitpython-on-samd21-boards/installing-circuitpython
+https://circuitpython.org/board/arduino_mkrzero/
+https://github.com/KMKfw
+
+keyboard diode wiring tutorial
+https://blog.roastpotatoes.co/guide/2015/11/04/how-to-handwire-a-planck/
+
+-------------------------------
 07.11.2021
 
 Keyboard diode
