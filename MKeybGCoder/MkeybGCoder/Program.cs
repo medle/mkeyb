@@ -51,15 +51,15 @@ namespace MKeybGCoder
     const double stabilThinnerDepthZ = (plateTopZ - 0.2);
 
     // keyboard plate sizes
-    const double plateBorder = 5;
-    const double plateBackWallCY = 22;
-    const double plateFrontWallCY = 12;
+    const double plateBorder = 7;
+    const double plateBackWallCY = 0;  // 22
+    const double plateFrontWallCY = 0;  // 12
     const double plateCX = u1 * 18.5 + plateBorder * 2;
     const double plateCY = u1 * 6.5 + plateBorder * 2;
 
     // SVG image size in mm  
-    const double svgWidth = u1 * 18.5 + plateBorder * 2;
-    const double svgHeight = u1 * 6.5 + plateBorder * 2 + plateFrontWallCY + plateBackWallCY;
+    const double svgWidth = plateCX;
+    const double svgHeight = plateCY + plateFrontWallCY + plateBackWallCY;
 
     // produce GCode or SVG picture
     bool produceGCode = false;
@@ -73,13 +73,12 @@ namespace MKeybGCoder
       WriteSVGStart();
 
       //CutU1(0, 0);
-      //CutAllKeys();
+      CutAllKeys();
       //CutStabilBase(0, 0, true);
       //CutSwitchUnitWithStabilizer(0, 0, 2, 24);
       //CutStabilPair(0, 0, 2, 24);
 
-      CutKeyCapHolderBase(0, 0, 3, 17.9, 0.9); // row3
-
+      //CutKeyCapHolderBase(0, 0, 3, 17.9, 0.9); // row3
       //CutKeyCapHolderClamp(0, 0); 
 
       Comment("Program stops");
@@ -156,48 +155,50 @@ namespace MKeybGCoder
 
     void CutAllKeys()
     {
+      Comment($"plateCX={D2S(plateCX)} plateCY={D2S(plateCY)}");
+
       DrawSVGRect(0, 0, plateCX, plateBackWallCY); 
       DrawSVGRect(0, plateBackWallCY, plateCX, plateBackWallCY + plateCY);
       DrawSVGRect(0, plateBackWallCY + plateCY, plateCX, plateBackWallCY + plateCY + plateFrontWallCY);
 
       // plate is being milled upside-down because thinners are on the inside
       double rowX = plateBorder;
-      double rowY = plateBackWallCY + plateBorder; 
+      double rowY = plateBackWallCY + plateBorder;
 
-      // 1st row: Escape
+      Comment("Row 1: Escape");
       CutSwitchUnit(rowX, rowY, 1);
       for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 2 + i * u1, rowY);
       for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 6.5 + i * u1, rowY);
       for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 11 + i * u1, rowY);
       for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
 
-      // 2nd row: digits
+      Comment("Row 2: Digits");
       rowY += u1 * 1.5;
       for (int i = 0; i < 13; i++) CutSwitchU1(rowX + i * u1, rowY);
       CutSwitchUnitWithStabilizer(rowX + 13 * u1, rowY, 2, 24); // backspace
       for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
 
-      // 3rd row: Tab
+      Comment("Row 3: Tab");
       rowY += u1;
       CutSwitchUnit(rowX, rowY, 1.5); 
       for (int i = 0; i < 12; i++) CutSwitchU1(rowX + u1 * 1.5 + i * u1, rowY);
       CutSwitchUnit(rowX + u1 * 1.5 + 12 * u1, rowY, 1.5);
       for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
 
-      // 4th row: Caps Lock
+      Comment("Row 4: Caps Lock");
       rowY += u1;
       CutSwitchUnit(rowX, rowY, 1.75); 
       for (int i = 0; i < 11; i++) CutSwitchU1(rowX + u1 * 1.75 + i * u1, rowY);
       CutSwitchUnitWithStabilizer(rowX + u1 * 1.75 + 11 * u1, rowY, 2.25, 24); // enter
 
-      // 5th row: Shift
+      Comment("Row 5: Shift");
       rowY += u1;
       CutSwitchUnitWithStabilizer(rowX, rowY, 2.25, 24); // left shift
       for (int i = 0; i < 10; i++) CutSwitchU1(rowX + u1 * 2.25 + i * u1, rowY);
       CutSwitchUnitWithStabilizer(rowX + u1 * 2.25 + 10 * u1, rowY, 2.75, 24); // right shift
       CutSwitchU1(rowX + u1 * 16.5, rowY); // arrow up
 
-      // 6th row: Space
+      Comment("Row 6: Space");
       rowY += u1;
       for(int i = 0; i < 3; i++) CutSwitchUnit(rowX + i * 1.25 * u1, rowY, 1.25);
       CutSwitchUnitWithStabilizer(rowX + u1 * 3.75, rowY, 6.25, 100); // Space
@@ -215,6 +216,7 @@ namespace MKeybGCoder
 
     void CutStabilPair(double unitX, double unitY, double widthInUnits, double leverWidth)
     {
+      Comment($"StabilPair {widthInUnits}");
       double unitCenterX = unitX + widthInUnits * u1 / 2;
       double leftBaseCenterX = unitCenterX - leverWidth / 2;
       double rightBaseCenterX = leftBaseCenterX + leverWidth;
@@ -223,7 +225,7 @@ namespace MKeybGCoder
       CutStabilBase(leftBaseCenterX, unitCenterY, true);
       CutStabilBase(rightBaseCenterX, unitCenterY, false);
 
-      Comment("Stabilizer lever pass");
+      Comment("Stabil lever pass");
       double passCY = stabilBulgeCY * 2;
       double passY = unitCenterY - stabilBulgeCY;
       double leftPassX1 = leftBaseCenterX + stabilHoleCX / 2 - millR;
@@ -267,7 +269,7 @@ namespace MKeybGCoder
       DrawSVGRect(unitX, unitY, unitX + u1 * widthInUnits, unitY + u1); // unit area
 
       JogZ(safeZ);
-      Comment("Switch cutout");
+      Comment($"Switch cutout {D2S(widthInUnits)}");
       CutSquare(true, holeX1, holeY1 - switchThinnerCY, holeX2, holeY2 + switchThinnerCY, switchThinnerDepthZ);
       double topZ = switchThinnerDepthZ;
       double bottomZ = finalCutDepthZ;
