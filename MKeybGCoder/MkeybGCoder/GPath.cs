@@ -20,17 +20,20 @@ namespace MKeybGCoder
       StartY = startY;
     }
 
-    double LastX => (Segments.Count == 0) ? StartX : Segments.Last().ToX;
-    double LastY => (Segments.Count == 0) ? StartY : Segments.Last().ToY;
+    public double X => (Segments.Count == 0) ? StartX : Segments.Last().ToX;
+    public double Y => (Segments.Count == 0) ? StartY : Segments.Last().ToY;
 
     public void AddLineTo(double toX, double toY)
-      => this.Segments.Add(new LineSegment(LastX, LastY, toX, toY));
+      => this.Segments.Add(new LineSegment(X, Y, toX, toY));
 
     public void AddArc1To(double toX, double toY, double radius)
-      => this.Segments.Add(new ArcSegment(LastX, LastY, toX, toY, radius, true));
+      => this.Segments.Add(new ArcSegment(X, Y, toX, toY, radius, true));
+
+    public void AddArc2To(double toX, double toY, double radius)
+      => this.Segments.Add(new ArcSegment(X, Y, toX, toY, radius, false));
 
     public void AddArcTo(double toX, double toY, double radius, bool clockwise)
-      => this.Segments.Add(new ArcSegment(LastX, LastY, toX, toY, radius, clockwise));
+      => this.Segments.Add(new ArcSegment(X, Y, toX, toY, radius, clockwise));
 
     public class Segment
     {
