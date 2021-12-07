@@ -92,6 +92,14 @@ namespace MKeybGCoder
     // X coordinate for halving the plate in two parts (computed value = 186.213)
     const double verticalSplitX = (svgWidth / 2);
 
+    double SplitOffsetCX => (GetBoltHoleX(2) - GetBoltHoleX(0));
+
+    bool enableXTranslation = false;
+
+    double TranslateX(double x) => (enableXTranslation ? (x - SplitOffsetCX) : x);
+
+    bool showPathPoints = true;
+
     // produce GCode or SVG picture
     bool produceGCode = false;
     bool produceSVG => !produceGCode;
@@ -105,11 +113,13 @@ namespace MKeybGCoder
       WriteSVGStart();
       DrawSVGCircle(0, 0, 2);
       DrawSVGCircle(svgWidth, 0, 2);
+      DrawSplitLine();
 
       //CutU1(0, 0);
       CutTopPlateOutline();
       CutPlateHoles();
-      //CutAllKeys();
+      CutCableHole();
+      CutAllKeys();
       //CutStabilBase(0, 0, true);
       //CutSwitchUnitWithStabilizer(0, 0, 2, 24);
       //CutStabilPair(0, 0, 2, 24);
@@ -195,9 +205,31 @@ namespace MKeybGCoder
     #endregion
     #region Plate
 
+    void DrawSplitLine()
+    {
+      DrawSVGLine(verticalSplitX, 0, verticalSplitX, svgHeight);
+    }
+
+    void CutCableHole()
+    {
+      double cx = 13;
+      double cy = 8;
+      double centerX = GetBoltHoleX(3) + (GetBoltHoleX(4) - GetBoltHoleX(3)) / 2;
+      double x = centerX - cx / 2; 
+      double y = stockOffset + 2; // lowest possible position
+
+      CutSquareZZ(true, x, y, x + cx, y + cy, 0, finalCutDepthZ);
+
+      double boltSpan = 30;
+      double boltY = y + cy + (stockOffset + plateBackWallCY - (y + cy)) / 2;
+
+      CutSafeHoleThrough(centerX - boltSpan / 2, boltY);
+      CutSafeHoleThrough(centerX + boltSpan / 2, boltY);
+    }
+
     double GetBoltHoleX(int index)
     {
-      double x1 = stockOffset + plateBorder + plateFrontWallCY / 2;
+      double x1 = stockOffset + plateBorder + plateFrontWallCY * 3 / 4;
       double x3 = stockOffset + plateCX / 2;
       double dx = (x3 - x1) / 2;
       return x1 + (dx * index);
@@ -212,10 +244,10 @@ namespace MKeybGCoder
       double cyFromBottom = plateFrontWallCY / 2;
 
       double frontY = stockOffset + plateBackWallCY + plateCY + cyFromBottom;
-      for(int i=0; i<5; i++) CutSafeHole(GetBoltHoleX(i), frontY, finalCutDepthZ);
+      for(int i=0; i<5; i++) CutSafeHoleThrough(GetBoltHoleX(i), frontY);
 
       double backY = stockOffset + cyFromBottom;
-      for (int i = 0; i < 5; i++) CutSafeHole(GetBoltHoleX(i), backY, finalCutDepthZ);
+      for (int i = 0; i < 5; i++) CutSafeHoleThrough(GetBoltHoleX(i), backY);
     }
 
     void CutTopPlateOutline()
@@ -244,11 +276,11 @@ namespace MKeybGCoder
       leftPath.AddLineTo(x + cornerR - millR, y - millR);
       leftPath.AddArc1To(x - millR, y + cornerR, cornerR + millR);
 
-      //leftPath.AddLineTo(x - millR, topY - cornerR);
       double bendCY = 5.6;
-      double bendR = 7.5;
+      double bendR = 10.5;
       double bendCX = 2.5;
       double stepCY = (plateCY - cornerR * 2 - bendCY * 4) / 3;
+
       leftPath.AddLineTo(leftPath.X, leftPath.Y + stepCY); // bottom step
       leftPath.AddArc1To(leftPath.X + bendCX / 2, leftPath.Y + bendCY, bendR);
       leftPath.AddArc2To(leftPath.X + bendCX / 2, leftPath.Y + bendCY, bendR);
@@ -274,6 +306,12 @@ namespace MKeybGCoder
       rightPath.AddArc1To(rightX - cornerR + millR, topY + plateFrontWallCY - cornerR + millR, cornerR);
       rightPath.AddLineTo(rightX - cornerR + millR, topY + millR);
       rightPath.AddArc1To(rightX + millR, topY - cornerR + millR, cornerR);
+      rightPath.AddLineTo(rightPath.X, rightPath.Y - stepCY);
+      rightPath.AddArc1To(rightPath.X - bendCX / 2, rightPath.Y - bendCY, bendR);
+      rightPath.AddArc2To(rightPath.X - bendCX / 2, rightPath.Y - bendCY, bendR);
+      rightPath.AddLineTo(rightPath.X, rightPath.Y - stepCY); // middle step
+      rightPath.AddArc2To(rightPath.X + bendCX / 2, rightPath.Y - bendCY, bendR);
+      rightPath.AddArc1To(rightPath.X + bendCX / 2, rightPath.Y - bendCY, bendR);
       rightPath.AddLineTo(rightX + millR, y + cornerR - millR);
       rightPath.AddArc1To(rightX + millR - cornerR, y - millR, cornerR);
       rightPath.AddLineTo(rightX + millR - cornerR, y - plateBackWallCY + cornerR - millR);
@@ -453,6 +491,8 @@ namespace MKeybGCoder
       }
     }
 
+    void CutSafeHoleThrough(double x, double y) => CutSafeHole(x, y, finalCutDepthZ);
+
     void CutSafeHole(double x, double y, double finalZ)
     {
       DrawSVGCircle(x, y, millR);
@@ -499,33 +539,33 @@ namespace MKeybGCoder
 
     void CutLineSegment(GPath.LineSegment line, double z)
     {
-      DrawSVGCircle(line.FromX, line.FromY, millR);
+      if(showPathPoints) DrawSVGCircle(line.FromX, line.FromY, millR);
       DrawSVGLine(line.FromX, line.FromY, line.ToX, line.ToY);
-      DrawSVGCircle(line.ToX, line.ToY, millR);
+      if (showPathPoints) DrawSVGCircle(line.ToX, line.ToY, millR);
 
       CutTo(line.ToX, line.ToY, z);
     }
 
     void CutArcSegment(GPath.ArcSegment arc, double z)
     {
-      DrawSVGCircle(arc.FromX, arc.FromY, millR);
+      if (showPathPoints) DrawSVGCircle(arc.FromX, arc.FromY, millR);
       DrawSVGArc(arc);
-      DrawSVGCircle(arc.ToX, arc.ToY, millR);
+      if (showPathPoints) DrawSVGCircle(arc.ToX, arc.ToY, millR);
 
       int gcode = arc.Clockwise ? 2 : 3;
-      WriteGCodeLine($"G0{gcode} X{D2S(arc.ToX)} Y{D2S(arc.ToY)} R{D2S(arc.Radius)} {cuttingSpeedF}");
+      WriteGCodeLine($"G0{gcode} X{D2SX(arc.ToX)} Y{D2S(arc.ToY)} R{D2S(arc.Radius)} {cuttingSpeedF}");
     }
 
     void JogSafeZ() => JogZ(safeZ);
 
     void JogZ(double z) => WriteGCodeLine($"G0 Z{D2S(z)}");
 
-    void JogXY(double x, double y) => WriteGCodeLine($"G0 X{D2S(x)} Y{D2S(y)}");
+    void JogXY(double x, double y) => WriteGCodeLine($"G0 X{D2SX(x)} Y{D2S(y)}");
 
     void CutTo(double x, double y, double z) => CutToF(x, y, z, cuttingSpeedF);
 
     void CutToF(double x, double y, double z, string speedF)
-      => WriteGCodeLine($"G1 X{D2S(x)} Y{D2S(y)} Z{D2S(z)} {speedF}");
+      => WriteGCodeLine($"G1 X{D2SX(x)} Y{D2S(y)} Z{D2S(z)} {speedF}");
 
     void Comment(string s) 
     {
@@ -543,12 +583,14 @@ namespace MKeybGCoder
 
     string D2S(double d) => string.Format(dotNFI, "{0:N}", d);
 
+    string D2SX(double x) => D2S(TranslateX(x));
+
     void DrawSVGLine(double x1, double y1, double x2, double y2)
     {
       // SVG Y-coordinate goes top-down, GCode Y-coordinate goes down-top
       WriteSVG(
-        $"<line x1='{D2S(x1)}' y1='{D2S(svgHeight - y1)}'" +
-        $" x2='{D2S(x2)}' y2='{D2S(svgHeight - y2)}'" +
+        $"<line x1='{D2SX(x1)}' y1='{D2S(svgHeight - y1)}'" +
+        $" x2='{D2SX(x2)}' y2='{D2S(svgHeight - y2)}'" +
         $" stroke='green' stroke-width='0.1' />");
     }
 
@@ -556,7 +598,7 @@ namespace MKeybGCoder
     {
       // SVG Y-coordinate goes top-down, GCode Y-coordinate goes down-top
       WriteSVG(
-        $"<circle cx='{D2S(centerX)}' cy='{D2S(svgHeight - centerY)}' r='{D2S(radius)}'" +
+        $"<circle cx='{D2SX(centerX)}' cy='{D2S(svgHeight - centerY)}' r='{D2S(radius)}'" +
         $" stroke='darkred' stroke-width='0.1' fill='none' />"
         );
     }
@@ -565,7 +607,7 @@ namespace MKeybGCoder
     {
       // SVG Y-coordinate goes top-down, GCode Y-coordinate goes down-top
       WriteSVG(
-        $"<rect x='{D2S(x1)}' y='{D2S(svgHeight - y2)}' width='{D2S(x2 - x1)}'" +
+        $"<rect x='{D2SX(x1)}' y='{D2S(svgHeight - y2)}' width='{D2S(x2 - x1)}'" +
         $" height='{D2S(y2 - y1)}' stroke='black' stroke-width='0.1' fill='none' />");
     }
 
@@ -575,8 +617,8 @@ namespace MKeybGCoder
       int flag = arc.Clockwise ? 1 : 0;
       WriteSVG(
         $"<path d='"  +
-        $"M {D2S(arc.FromX)} {D2S(svgHeight - arc.FromY)}" +
-        $" A {D2S(arc.Radius)} {D2S(arc.Radius)} 0 0 {flag} {D2S(arc.ToX)} {D2S(svgHeight - arc.ToY)}" +
+        $"M {D2SX(arc.FromX)} {D2S(svgHeight - arc.FromY)}" +
+        $" A {D2S(arc.Radius)} {D2S(arc.Radius)} 0 0 {flag} {D2SX(arc.ToX)} {D2S(svgHeight - arc.ToY)}" +
         $"' stroke='green' stroke-width='0.1' fill='none' />");
     }
 
