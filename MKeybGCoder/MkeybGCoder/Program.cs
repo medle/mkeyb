@@ -92,16 +92,23 @@ namespace MKeybGCoder
     // X coordinate for halving the plate in two parts (computed value = 186.213)
     const double verticalSplitX = (svgWidth / 2);
 
-    double SplitOffsetCX => (GetBoltHoleX(2) - GetBoltHoleX(0));
+    // enable or disable rendering of each side of the plate
+    bool enablePart1 = true;
+    bool enablePart2 = true;
+    bool enableShiftX = false;
 
-    bool enableXTranslation = false;
+    bool SkipSuchX(double x) 
+      => (!enablePart1 && x <= verticalSplitX) || (!enablePart2 && x > verticalSplitX);
 
-    double TranslateX(double x) => (enableXTranslation ? (x - SplitOffsetCX) : x);
+    double ShiftCX => (GetBoltHoleX(2) - GetBoltHoleX(0));
+
+    double ShiftX(double x) => (enableShiftX ? (x - ShiftCX) : x);
 
     bool showPathPoints = true;
 
     // produce GCode or SVG picture
     bool produceGCode = false;
+
     bool produceSVG => !produceGCode;
 
     Program(bool gcode)
@@ -110,14 +117,14 @@ namespace MKeybGCoder
       Comment($"Program was generated {DateTime.Now.ToString("dd.MM.yy HH:mm")}");
       Comment($"Tool diameter={millD}mm");
       Comment($"View GCode: ncviewer.com");
-      WriteSVGStart();
+      WriteSVGBegin();
       DrawSVGCircle(0, 0, 2);
       DrawSVGCircle(svgWidth, 0, 2);
       DrawSplitLine();
 
       //CutU1(0, 0);
       CutTopPlateOutline();
-      CutPlateHoles();
+      CutPlateBoltHoles();
       CutCableHole();
       CutAllKeys();
       //CutStabilBase(0, 0, true);
@@ -131,7 +138,7 @@ namespace MKeybGCoder
       JogZ(safeZ);
       JogXY(0, 0);
 
-      WriteSVGStop();
+      WriteSVGEnd();
     }
 
     #endregion
@@ -235,19 +242,23 @@ namespace MKeybGCoder
       return x1 + (dx * index);
     }
 
-    void CutPlateHoles()
+    void CutPlateBoltHoles()
     {
       double x1 = GetBoltHoleX(1);
       double x3 = GetBoltHoleX(3);
-      Comment($"Plate holes x1={D2S(x1)} x3={D2S(x3)} [x1,x3]={D2S(x3 - x1)}");
+      Comment($"Plate holes x1={D2SX(x1)} x3={D2SX(x3)} [x1,x3]={D2S(x3 - x1)}");
 
       double cyFromBottom = plateFrontWallCY / 2;
-
       double frontY = stockOffset + plateBackWallCY + plateCY + cyFromBottom;
-      for(int i=0; i<5; i++) CutSafeHoleThrough(GetBoltHoleX(i), frontY);
-
       double backY = stockOffset + cyFromBottom;
-      for (int i = 0; i < 5; i++) CutSafeHoleThrough(GetBoltHoleX(i), backY);
+
+      for (int i = 0; i < 5; i++) {
+        double x = GetBoltHoleX(i);
+        Comment($"Front bolt={i} x={D2SX(x)} y={D2S(frontY)}");
+        CutSafeHoleThrough(x, frontY);
+        Comment($"Back bolt={i} x={D2SX(x)} y={D2S(backY)}");
+        CutSafeHoleThrough(x, backY);
+      }
     }
 
     void CutTopPlateOutline()
@@ -265,6 +276,7 @@ namespace MKeybGCoder
       y += plateBackWallCY;
       double topY = y + plateCY;
 
+      Comment("Left outline");
       JogSafeZ();
       JogXY(verticalSplitX, y - plateBackWallCY - millR);
       JogZ(0);
@@ -295,6 +307,7 @@ namespace MKeybGCoder
       leftPath.AddLineTo(verticalSplitX, topY + plateFrontWallCY + millR);
       CutPathZ(leftPath, 0);
 
+      Comment("Right outline");
       JogSafeZ();
       JogXY(verticalSplitX, topY + plateFrontWallCY + millR);
       JogZ(0);
@@ -339,7 +352,7 @@ namespace MKeybGCoder
       double rowY = stockOffset + plateBackWallCY + plateBorder;
 
       Comment("Row 1: Escape");
-      CutSwitchUnit(rowX, rowY, 1);
+      CutSwitchU1(rowX, rowY);
       for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 2 + i * u1, rowY);
       for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 6.5 + i * u1, rowY);
       for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 11 + i * u1, rowY);
@@ -403,10 +416,15 @@ namespace MKeybGCoder
       double passY = unitCenterY - stabilBulgeCY;
       double leftPassX1 = leftBaseCenterX + stabilHoleCX / 2 - millR;
       double leftPassX2 = unitCenterX - switchHoleCX / 2 + millR;
-      CutSquareFullDepth(leftPassX1, passY, leftPassX2, passY + passCY);
+
+      if(!SkipSuchX(leftPassX1))
+        CutSquareFullDepth(leftPassX1, passY, leftPassX2, passY + passCY);
+
       double rightPassX1 = unitCenterX + switchHoleCX / 2 - millR;
       double rightPassX2 = rightBaseCenterX - stabilHoleCX / 2 + millR;
-      CutSquareFullDepth(rightPassX1, passY, rightPassX2, passY + passCY);
+
+      if(!SkipSuchX(rightPassX1))
+        CutSquareFullDepth(rightPassX1, passY, rightPassX2, passY + passCY);
     }
 
     void CutStabilBase(double centerX, double centerY, bool isLeftBase)
@@ -416,6 +434,8 @@ namespace MKeybGCoder
       double holeY1 = centerY - stabilCenterToTopCY; // is cut upside-down
       double holeX2 = holeX1 + stabilHoleCX;
       double holeY2 = holeY1 + stabilHoleCY;
+
+      if (SkipSuchX(holeX1)) return;
 
       JogZ(safeZ);
       Comment("Stabilizer base");
@@ -438,6 +458,8 @@ namespace MKeybGCoder
       double holeX2 = holeX1 + switchHoleCX;
       double holeY1 = unitY + (u1 - switchHoleCY) / 2;
       double holeY2 = holeY1 + switchHoleCY;
+
+      if (SkipSuchX(holeX1)) return;
 
       DrawSVGRect(unitX, unitY, unitX + u1 * widthInUnits, unitY + u1); // unit area
 
@@ -569,7 +591,7 @@ namespace MKeybGCoder
 
     void Comment(string s) 
     {
-      if (produceGCode) WriteGCodeLine($"({s})");
+      if (produceGCode) WriteGCodeLine($"(___{s}___)");
       WriteSVG($"<!-- {s} -->");
     }
 
@@ -583,7 +605,7 @@ namespace MKeybGCoder
 
     string D2S(double d) => string.Format(dotNFI, "{0:N}", d);
 
-    string D2SX(double x) => D2S(TranslateX(x));
+    string D2SX(double x) => D2S(ShiftX(x));
 
     void DrawSVGLine(double x1, double y1, double x2, double y2)
     {
@@ -622,14 +644,14 @@ namespace MKeybGCoder
         $"' stroke='green' stroke-width='0.1' fill='none' />");
     }
 
-    void WriteSVGStart()
+    void WriteSVGBegin()
     {
       WriteSVG($"<svg xmlns='http://www.w3.org/2000/svg'");
       WriteSVG($" width='{D2S(svgWidth)}mm' height='{D2S(svgHeight)}mm'");
       WriteSVG($" viewBox='0 0 {D2S(svgWidth)} {D2S(svgHeight)}'>");
     }
 
-    void WriteSVGStop() => WriteSVG("</svg>");
+    void WriteSVGEnd() => WriteSVG("</svg>");
 
     void WriteSVG(string s)
     {
