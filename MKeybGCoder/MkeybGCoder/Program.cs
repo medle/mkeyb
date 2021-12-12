@@ -51,9 +51,9 @@ namespace MKeybGCoder
     const double safeZ = 5;
     const double slowZ = 1;
     const double plateTopZ = 0;
-    const double proposedStepDown = 0.3;
-    const double finalCutDepthZ = (plateTopZ - 2.2);
-    const string cuttingSpeedF = "F60";
+    const double proposedStepDown = 0.5;
+    const double finalCutDepthZ = (plateTopZ - 2.1);
+    const string cuttingSpeedF = "F20";
     const string drillSpeedF = "F10";
 
     // key block size 1U
@@ -85,28 +85,34 @@ namespace MKeybGCoder
     const double plateCY = u1 * 6.5 + plateBorder * 2;
     const double stockOffset = 5;
 
+    const double stockCX = stockOffset * 2 + plateCX;
+    const double stockCY = stockOffset * 2 + plateCY + plateFrontWallCY + plateBackWallCY;
+
+    // X coordinate for halving the plate in two parts (computed value = 186.293)
+    const double verticalSplitX = (stockCX / 2);
+
     // SVG image size in mm  
-    const double svgWidth = plateCX + stockOffset * 2;
-    const double svgHeight = plateCY + plateFrontWallCY + plateBackWallCY + stockOffset * 2;
+    const double svgWidth = stockCX;
+    const double svgHeight = stockCY;
+    
+    bool enablePart1 = true; // enable rendering of the left part
+    bool enablePart2 = false; // enable rendering of the right part
+    bool enableShiftX = false; // enable shifting of coordinates to the left
 
-    // X coordinate for halving the plate in two parts (computed value = 186.213)
-    const double verticalSplitX = (svgWidth / 2);
-
-    // enable or disable rendering of each side of the plate
-    bool enablePart1 = true;
-    bool enablePart2 = true;
-    bool enableShiftX = false;
-
+    // Should a figure with such an x coordinate be skipped during rendering
     bool SkipSuchX(double x) 
       => (!enablePart1 && x <= verticalSplitX) || (!enablePart2 && x > verticalSplitX);
 
+    // Amount of horizontal x shifting
     double ShiftCX => (GetBoltHoleX(2) - GetBoltHoleX(0));
 
+    // Perform shifting of the given x coordinate
     double ShiftX(double x) => (enableShiftX ? (x - ShiftCX) : x);
 
+    // Should the cutting path points be shown in SVG
     bool showPathPoints = true;
 
-    // produce GCode or SVG picture
+    // Produce GCode or SVG picture
     bool produceGCode = false;
 
     bool produceSVG => !produceGCode;
@@ -116,7 +122,10 @@ namespace MKeybGCoder
       produceGCode = gcode;
       Comment($"Program was generated {DateTime.Now.ToString("dd.MM.yy HH:mm")}");
       Comment($"Tool diameter={millD}mm");
-      Comment($"View GCode: ncviewer.com");
+      Comment($"View G-code: ncviewer.com");
+      Comment($"Stock cx={D2S(stockCX)} cy={D2S(stockCY)}");
+      Comment($"Shift cx={D2S(ShiftCX)} enabled={enableShiftX}");
+
       WriteSVGBegin();
       DrawSVGCircle(0, 0, 2);
       DrawSVGCircle(svgWidth, 0, 2);
@@ -125,7 +134,7 @@ namespace MKeybGCoder
       //CutU1(0, 0);
       CutTopPlateOutline();
       CutPlateBoltHoles();
-      CutCableHole();
+      //CutCableHole();
       CutAllKeys();
       //CutStabilBase(0, 0, true);
       //CutSwitchUnitWithStabilizer(0, 0, 2, 24);
@@ -137,6 +146,7 @@ namespace MKeybGCoder
       Comment("Program stops");
       JogZ(safeZ);
       JogXY(0, 0);
+      WriteGCodeLine("M30");
 
       WriteSVGEnd();
     }
@@ -225,12 +235,16 @@ namespace MKeybGCoder
       double x = centerX - cx / 2; 
       double y = stockOffset + 2; // lowest possible position
 
+      Comment("Cable hole");
       CutSquareZZ(true, x, y, x + cx, y + cy, 0, finalCutDepthZ);
 
       double boltSpan = 30;
       double boltY = y + cy + (stockOffset + plateBackWallCY - (y + cy)) / 2;
 
+      Comment("Cable left bolt");
       CutSafeHoleThrough(centerX - boltSpan / 2, boltY);
+
+      Comment("Cable right bolt");
       CutSafeHoleThrough(centerX + boltSpan / 2, boltY);
     }
 
@@ -254,8 +268,11 @@ namespace MKeybGCoder
 
       for (int i = 0; i < 5; i++) {
         double x = GetBoltHoleX(i);
+        if (SkipSuchX(x)) continue;
+
         Comment($"Front bolt={i} x={D2SX(x)} y={D2S(frontY)}");
         CutSafeHoleThrough(x, frontY);
+
         Comment($"Back bolt={i} x={D2SX(x)} y={D2S(backY)}");
         CutSafeHoleThrough(x, backY);
       }
@@ -275,11 +292,6 @@ namespace MKeybGCoder
       // top plate
       y += plateBackWallCY;
       double topY = y + plateCY;
-
-      Comment("Left outline");
-      JogSafeZ();
-      JogXY(verticalSplitX, y - plateBackWallCY - millR);
-      JogZ(0);
 
       // plate left cutout bottom-to-top clockwise
       var leftPath = new GPath(verticalSplitX, y - plateBackWallCY - millR);
@@ -305,12 +317,12 @@ namespace MKeybGCoder
       leftPath.AddLineTo(x + cornerR - millR, topY + plateFrontWallCY - cornerR + millR);
       leftPath.AddArc1To(x + cornerR + cornerR - millR, topY + plateFrontWallCY + millR, cornerR);
       leftPath.AddLineTo(verticalSplitX, topY + plateFrontWallCY + millR);
-      CutPathZ(leftPath, 0);
 
-      Comment("Right outline");
-      JogSafeZ();
-      JogXY(verticalSplitX, topY + plateFrontWallCY + millR);
-      JogZ(0);
+      if (enablePart1) {
+        Comment("Left outline");
+        JogSafeZ();
+        CutPathZZ(leftPath, plateTopZ, finalCutDepthZ);
+      }
 
       // plate right cutout top-to-bottom clockwise
       double rightX = x + plateCX;
@@ -330,7 +342,12 @@ namespace MKeybGCoder
       rightPath.AddLineTo(rightX + millR - cornerR, y - plateBackWallCY + cornerR - millR);
       rightPath.AddArc1To(rightX + millR - cornerR - cornerR, y - plateBackWallCY - millR, cornerR);
       rightPath.AddLineTo(verticalSplitX, y - plateBackWallCY - millR);
-      CutPathZ(rightPath, 0);
+
+      if (enablePart2) {
+        Comment("Right outline");
+        JogSafeZ();
+        CutPathZZ(rightPath, plateTopZ, finalCutDepthZ);
+      }
 
       // draw corners
       DrawSVGCircle(x + cornerR, y + cornerR, cornerR);
@@ -551,11 +568,30 @@ namespace MKeybGCoder
       CutTo(millX1, millY1, z1); // left
     }
 
-    void CutPathZ(GPath path, double z)
+    void CutPathZZ(GPath path, double topZ, double bottomZ)
     {
+      int numSteps = (int)((topZ - bottomZ) / proposedStepDown);
+      double realStepDownZ = (topZ - bottomZ) / numSteps;
+      for (int i = 0; i < numSteps; i++) {
+        Comment($"Cut path {i + 1}/{numSteps} zDown={D2S(realStepDownZ)}");
+        double cutZ = topZ - (i + 1) * realStepDownZ;
+        CutPathZ(true, path, cutZ);
+      }
+    }
+
+    void CutPathZ(bool jogToStart, GPath path, double cutZ)
+    {
+      if (jogToStart) {
+        JogZ(safeZ);
+        JogXY(path.StartX, path.StartY);
+        JogZ(slowZ);
+      }
+
+      CutToF(path.StartX, path.StartY, cutZ, drillSpeedF);
+
       foreach (var segment in path.Segments) {
-        if (segment is GPath.LineSegment line) CutLineSegment(line, z);
-        if (segment is GPath.ArcSegment arc) CutArcSegment(arc, z);
+        if (segment is GPath.LineSegment line) CutLineSegment(line, cutZ);
+        if (segment is GPath.ArcSegment arc) CutArcSegment(arc, cutZ);
       }
     }
 
@@ -580,18 +616,18 @@ namespace MKeybGCoder
 
     void JogSafeZ() => JogZ(safeZ);
 
-    void JogZ(double z) => WriteGCodeLine($"G0 Z{D2S(z)}");
+    void JogZ(double z) => WriteGCodeLine($"G00 Z{D2S(z)}");
 
-    void JogXY(double x, double y) => WriteGCodeLine($"G0 X{D2SX(x)} Y{D2S(y)}");
+    void JogXY(double x, double y) => WriteGCodeLine($"G00 X{D2SX(x)} Y{D2S(y)}");
 
     void CutTo(double x, double y, double z) => CutToF(x, y, z, cuttingSpeedF);
 
     void CutToF(double x, double y, double z, string speedF)
-      => WriteGCodeLine($"G1 X{D2SX(x)} Y{D2S(y)} Z{D2S(z)} {speedF}");
+      => WriteGCodeLine($"G01 X{D2SX(x)} Y{D2S(y)} Z{D2S(z)} {speedF}");
 
     void Comment(string s) 
     {
-      if (produceGCode) WriteGCodeLine($"(___{s}___)");
+      if (produceGCode) WriteGCodeLine($"( {s} )");
       WriteSVG($"<!-- {s} -->");
     }
 
