@@ -38,14 +38,14 @@ namespace MKeybGCoder
         using (FileStream fileStream = new FileStream(imageFileName, FileMode.OpenOrCreate, FileAccess.Write)) {
           memoryStream.CopyTo(fileStream);
         }
-        System.Diagnostics.Process.Start(imageFileName);
+        //System.Diagnostics.Process.Start(imageFileName);
       }
     }
 
     // mill bit
     const double millD = 3;
     const double millR = millD / 2;
-    const double millOvercut = 0.05; // 3mm bit overcuts 0.05mm (decided with new switches)
+    const double millOvercut = 0.00; // 3mm bit overcuts 0.05mm (decided with new switches)
 
     // cutting parameters
     const double safeZ = 5;
@@ -53,7 +53,7 @@ namespace MKeybGCoder
     const double plateTopZ = 0;
     const double proposedStepDown = 0.5;
     const double finalCutDepthZ = (plateTopZ - 2.1);
-    const string cuttingSpeedF = "F20";
+    const string cuttingSpeedF = "F50";
     const string drillSpeedF = "F10";
 
     // key block size 1U
@@ -61,14 +61,14 @@ namespace MKeybGCoder
     const double u1 = inch * 0.75;
 
     // cherry MX switch cutout 
-    const double switchHoleCX = 14.0 - (millOvercut * 2);
-    const double switchHoleCY = 13.7 - (millOvercut * 2);
+    const double switchHoleCX = 13.9 - (millOvercut * 2);
+    const double switchHoleCY = 13.85 - (millOvercut * 2);
     const double switchThinnerCY = 1;
     const double switchThinnerDepthZ = plateTopZ - 0.5;
 
     // panda stabilizer cutout
-    const double stabilHoleCX = 6.7 - (millOvercut * 2);
-    const double stabilHoleCY = 12.2 - (millOvercut * 2);
+    const double stabilHoleCX = 6.8 - (millOvercut * 2);
+    const double stabilHoleCY = 12.3 - (millOvercut * 2);
     const double stabilCenterCY = 7;
     const double stabilBulgeBottomEdgeCY = stabilCenterCY;
     const double stabilBulgeCX = 0.5;
@@ -131,11 +131,11 @@ namespace MKeybGCoder
       DrawSVGCircle(svgWidth, 0, 2);
       DrawSplitLine();
 
-      //CutU1(0, 0);
+      //CutSwitchU1(0, 0);
       CutTopPlateOutline();
-      CutPlateBoltHoles();
+      //CutPlateBoltHoles();
       //CutCableHole();
-      CutAllKeys();
+      //CutAllKeys();
       //CutStabilBase(0, 0, true);
       //CutSwitchUnitWithStabilizer(0, 0, 2, 24);
       //CutStabilPair(0, 0, 2, 24);
@@ -145,8 +145,7 @@ namespace MKeybGCoder
 
       Comment("Program stops");
       JogZ(safeZ);
-      JogXY(0, 0);
-      WriteGCodeLine("M30");
+      //WriteGCodeLine("M30");
 
       WriteSVGEnd();
     }
@@ -236,7 +235,7 @@ namespace MKeybGCoder
       double y = stockOffset + 2; // lowest possible position
 
       Comment("Cable hole");
-      CutSquareZZ(true, x, y, x + cx, y + cy, 0, finalCutDepthZ);
+      CutSquareMultiPass(x, y, x + cx, y + cy, 0, finalCutDepthZ);
 
       double boltSpan = 30;
       double boltY = y + cy + (stockOffset + plateBackWallCY - (y + cy)) / 2;
@@ -287,7 +286,10 @@ namespace MKeybGCoder
       double cornerR = plateCornerRadius;
 
       // back wall
-      DrawSVGRect(x + cornerR, y, x + plateCX - cornerR, y + plateBackWallCY);
+      double bendLowY = y + plateBackWallCY;
+      Comment($"Bend: x1={D2S(x + cornerR)} x2={D2S(verticalSplitX)}");
+      Comment($"Bend lowY={D2S(bendLowY)}");
+      DrawSVGRect(x + cornerR, y, x + plateCX - cornerR, bendLowY);
 
       // top plate
       y += plateBackWallCY;
@@ -356,7 +358,8 @@ namespace MKeybGCoder
       DrawSVGCircle(rightX - cornerR, y + cornerR, cornerR);
 
       // front wall
-      y += plateCY;
+      y += plateCY;      
+      Comment($"Bend: highY={D2S(y)}");
       DrawSVGRect(x + cornerR, y, x + plateCX - cornerR, y + plateFrontWallCY);
     }
 
@@ -367,46 +370,53 @@ namespace MKeybGCoder
       // plate is being milled upside-down because thinners are on the inside
       double rowX = stockOffset + plateBorder;
       double rowY = stockOffset + plateBackWallCY + plateBorder;
-
+      
       Comment("Row 1: Escape");
+      
       CutSwitchU1(rowX, rowY);
       for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 2 + i * u1, rowY);
       for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 6.5 + i * u1, rowY);
       for (int i = 0; i < 4; i++) CutSwitchU1(rowX + u1 * 11 + i * u1, rowY);
       for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
-
+      
       Comment("Row 2: Digits");
       rowY += u1 * 1.5;
+      
       for (int i = 0; i < 13; i++) CutSwitchU1(rowX + i * u1, rowY);
       CutSwitchUnitWithStabilizer(rowX + 13 * u1, rowY, 2, 24); // backspace
       for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
-
+      
       Comment("Row 3: Tab");
       rowY += u1;
+      
       CutSwitchUnit(rowX, rowY, 1.5);
       for (int i = 0; i < 12; i++) CutSwitchU1(rowX + u1 * 1.5 + i * u1, rowY);
       CutSwitchUnit(rowX + u1 * 1.5 + 12 * u1, rowY, 1.5);
       for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // extra
-
+      
       Comment("Row 4: Caps Lock");
       rowY += u1;
+      
       CutSwitchUnit(rowX, rowY, 1.75);
       for (int i = 0; i < 11; i++) CutSwitchU1(rowX + u1 * 1.75 + i * u1, rowY);
       CutSwitchUnitWithStabilizer(rowX + u1 * 1.75 + 11 * u1, rowY, 2.25, 24); // enter
-
+      
       Comment("Row 5: Shift");
       rowY += u1;
+      
       CutSwitchUnitWithStabilizer(rowX, rowY, 2.25, 24); // left shift
       for (int i = 0; i < 10; i++) CutSwitchU1(rowX + u1 * 2.25 + i * u1, rowY);
       CutSwitchUnitWithStabilizer(rowX + u1 * 2.25 + 10 * u1, rowY, 2.75, 24); // right shift
       CutSwitchU1(rowX + u1 * 16.5, rowY); // arrow up
-
+      
       Comment("Row 6: Space");
       rowY += u1;
+      
       for (int i = 0; i < 3; i++) CutSwitchUnit(rowX + i * 1.25 * u1, rowY, 1.25);
       CutSwitchUnitWithStabilizer(rowX + u1 * 3.75, rowY, 6.25, 100); // Space
       for (int i = 0; i < 4; i++) CutSwitchUnit(rowX + u1 * (3.75 + 6.25) + i * 1.25 * u1, rowY, 1.25);
       for (int i = 0; i < 3; i++) CutSwitchU1(rowX + u1 * 15.5 + i * u1, rowY); // arrows
+      
     }
 
     void CutSwitchU1(double unitX, double unitY) => CutSwitchUnit(unitX, unitY, 1);
