@@ -1,0 +1,4 @@
+
+ freedom label macro parameters
+ https://wiki.freecadweb.org/Macro_FCCircularText
+ Font=FuturaItalic Mode=Flat R=50 H=4 Begin=67 End=130 X=6.6 Y=-36 Z=-0.5 Extr=1
