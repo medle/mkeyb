@@ -14,6 +14,14 @@ namespace MKeybGCoder
 
     public List<Segment> Segments = new List<Segment>();
 
+    public GPath(IEnumerable<Segment> segments)
+    {
+      if (segments != null) Segments.AddRange(segments);
+      if (Segments.Count == 0) throw new ArgumentException();
+      this.StartX = Segments[0].FromX;
+      this.StartY = Segments[0].FromY;
+    }
+
     public GPath(double startX, double startY)
     {
       StartX = startX;

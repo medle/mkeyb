@@ -1,8 +1,8 @@
 ﻿
 using System;
 using System.Globalization;
+using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace MKeybGCoder
 {
@@ -38,7 +38,7 @@ namespace MKeybGCoder
         using (FileStream fileStream = new FileStream(imageFileName, FileMode.OpenOrCreate, FileAccess.Write)) {
           memoryStream.CopyTo(fileStream);
         }
-        //System.Diagnostics.Process.Start(imageFileName);
+        System.Diagnostics.Process.Start(imageFileName);
       }
     }
 
@@ -96,7 +96,7 @@ namespace MKeybGCoder
     const double svgHeight = stockCY;
     
     bool enablePart1 = true; // enable rendering of the left part
-    bool enablePart2 = false; // enable rendering of the right part
+    bool enablePart2 = true; // enable rendering of the right part
     bool enableShiftX = false; // enable shifting of coordinates to the left
 
     // Should a figure with such an x coordinate be skipped during rendering
@@ -131,9 +131,11 @@ namespace MKeybGCoder
       DrawSVGCircle(svgWidth, 0, 2);
       DrawSplitLine();
 
+      CutFlower();
+
       //CutSwitchU1(0, 0);
       CutTopPlateOutline();
-      //CutPlateBoltHoles();
+      CutPlateBoltHoles();
       //CutCableHole();
       //CutAllKeys();
       //CutStabilBase(0, 0, true);
@@ -148,6 +150,133 @@ namespace MKeybGCoder
       //WriteGCodeLine("M30");
 
       WriteSVGEnd();
+    }
+
+    #endregion
+    #region Flower
+
+    void CutFlower()
+    {
+      double centerY = plateBorder + plateBackWallCY + (plateCY / 2);
+      var path = MakeFlower2(GetBoltHoleX(1), centerY, plateCY - (u1 * 1));
+      Comment("Flower");
+      CutPathZ(true, path, 0);
+    }
+
+    IEnumerable<GPath.Segment> MakeCircle(double centerX, double centerY, double radius)
+    {
+      //DrawSVGCircle(centerX, centerY, radius - millR, SvgColorNames.DarkRed);
+      //DrawSVGCircle(centerX, centerY, radius + millR, SvgColorNames.DarkRed);
+      yield return MakeArc(centerX, centerY, radius, 0, Math.PI, false);
+      yield return MakeArc(centerX, centerY, radius, Math.PI, Math.PI * 2, false);
+    }
+
+    IEnumerable<GPath.Segment> MakeCircle(double centerX, double centerY, double radius, double angle)
+    {
+      double x = centerX + radius * Math.Cos(angle);
+      double y = centerY + radius * Math.Sin(angle);
+      return MakeCircle(x, y, radius);
+    }
+
+    GPath.Segment MakeArc(double centerX, double centerY, double radius, double fromAngle, double toAngle, bool clockwise)
+    {
+      double fromX = centerX + radius * Math.Cos(fromAngle);
+      double fromY = centerY + radius * Math.Sin(fromAngle);
+      double toX = centerX + radius * Math.Cos(toAngle);
+      double toY = centerY + radius * Math.Sin(toAngle);
+      return new GPath.ArcSegment(fromX, fromY, toX, toY, radius, clockwise);
+    }
+
+    GPath MakeFlower2(double centerX, double centerY, double diameter)
+    {
+      var segments = new List<GPath.Segment>();
+
+      int numWingCircles = 6;
+      double turnAngle = (Math.PI * 2) / numWingCircles;
+
+      double angle = Math.PI / 2;
+      double wingRadius = ((diameter / 2) - millR) / 2;
+      for (int i = 0; i < numWingCircles; i++) {
+        segments.AddRange(MakeCircle(centerX, centerY, wingRadius, angle));
+        angle += turnAngle;
+      }
+
+      angle = Math.PI / 2;
+      for (int i = 0; i < numWingCircles; i++) {
+        double x = centerX + wingRadius * 2 * Math.Cos(angle);
+        double y = centerY + wingRadius * 2 * Math.Sin(angle);
+        double deltaAngle = Math.Asin(0.5);
+        double fromAngle = Math.PI + deltaAngle + turnAngle * i;
+        double toAngle = 2 * Math.PI - deltaAngle + turnAngle * i;
+        segments.Add(MakeArc(x, y, wingRadius, fromAngle, toAngle, false));
+        angle += turnAngle;
+      }
+
+      angle = 0;
+      for (int i = 0; i < numWingCircles; i++) {
+        double delta = 2 * (wingRadius - wingRadius * Math.Cos(Math.PI / 6));
+        double r2 = wingRadius * 2 - delta;
+        double x = centerX + r2 * Math.Cos(angle);
+        double y = centerY + r2 * Math.Sin(angle);
+        double fromAngle = Math.PI / 2 + turnAngle * i;
+        double toAngle = Math.PI * 2 * 3 / 4 + turnAngle * i;
+        segments.Add(MakeArc(x, y, wingRadius, fromAngle, toAngle, false));
+        angle += turnAngle;
+      }
+
+      angle = 0;
+      for (int i = 0; i < numWingCircles; i++) {
+
+        double distance = 3 * wingRadius * Math.Cos(turnAngle / 2);
+        double x = centerX + distance * Math.Cos(angle);
+        double y = centerY + distance * Math.Sin(angle);
+        //DrawSVGCircle(x, y, millR);
+
+        double half = wingRadius * Math.Sin(turnAngle / 2);
+        double x1 = x + half * Math.Cos(Math.PI / 2 + angle);
+        double y1 = y + half * Math.Sin(Math.PI / 2 + angle);
+        //DrawSVGCircle(x1, y1, millR);
+
+        double x2 = x - half * Math.Cos(Math.PI / 2 + angle);
+        double y2 = y - half * Math.Sin(Math.PI / 2 + angle);
+        //DrawSVGCircle(x2, y2, millR);
+
+        double fromAngle = Math.PI - turnAngle / 2 + angle;
+        double toAngle = Math.PI + turnAngle / 2 + angle;
+        segments.Add(MakeArc(x1, y1, wingRadius, fromAngle, toAngle, false));
+        segments.Add(MakeArc(x2, y2, wingRadius, fromAngle, toAngle, false));
+
+        angle += turnAngle;
+      }
+
+      segments.AddRange(MakeCircle(centerX, centerY, wingRadius));
+
+      // outline circle
+      //CutCircle(centerX, centerY, wingRadius * 2); 
+
+      return new GPath(segments);
+    }
+
+    void CutFlower1(double centerX, double centerY, double diameter)
+    {
+      int numWingCircles = 12;
+      double wingAngleStep = (Math.PI * 2) / numWingCircles;
+      double subWingAngleStep = wingAngleStep / numWingCircles;
+
+      double angle = 0;
+      double wingRadius = ((diameter / 2) - millR) / 2;
+      for (int i = 0; i < numWingCircles; i++) {
+        //CutCircle(centerX, centerY, wingRadius, angle - subWingAngleStep);
+        //CutCircle(centerX, centerY, wingRadius, angle + subWingAngleStep);
+        MakeCircle(centerX, centerY, wingRadius, angle);
+        angle += wingAngleStep;
+      }
+
+      double coreRadius = wingRadius * Math.Sin(wingAngleStep) * 2;
+      MakeCircle(centerX, centerY, coreRadius);
+
+      //double borderRadius = (diameter / 2) - millR;
+      //CutCircle(centerX, centerY, borderRadius);
     }
 
     #endregion
@@ -599,10 +728,27 @@ namespace MKeybGCoder
 
       CutToF(path.StartX, path.StartY, cutZ, drillSpeedF);
 
+      double lastX = path.StartX;
+      double lastY = path.StartY;
+
       foreach (var segment in path.Segments) {
-        if (segment is GPath.LineSegment line) CutLineSegment(line, cutZ);
-        if (segment is GPath.ArcSegment arc) CutArcSegment(arc, cutZ);
+        if (Math.Abs(segment.FromX - lastX) > 0.001 || Math.Abs(segment.FromY - lastY) > 0.001) {
+          JogZ(safeZ);
+          JogXY(segment.FromX, segment.FromY);
+          JogZ(slowZ);
+          CutToF(segment.FromX, segment.FromY, cutZ, drillSpeedF);
+        }
+
+        CutSegment(segment, cutZ);
+        lastX = segment.ToX;
+        lastY = segment.ToY;
       }
+    }
+
+    void CutSegment(GPath.Segment segment, double cutZ)
+    {
+      if (segment is GPath.LineSegment line) CutLineSegment(line, cutZ);
+      if (segment is GPath.ArcSegment arc) CutArcSegment(arc, cutZ);
     }
 
     void CutLineSegment(GPath.LineSegment line, double z)
@@ -621,7 +767,7 @@ namespace MKeybGCoder
       if (showPathPoints) DrawSVGCircle(arc.ToX, arc.ToY, millR);
 
       int gcode = arc.Clockwise ? 2 : 3;
-      WriteGCodeLine($"G0{gcode} X{D2SX(arc.ToX)} Y{D2S(arc.ToY)} R{D2S(arc.Radius)} {cuttingSpeedF}");
+      WriteGCodeLine($"G0{gcode} X{D2SX(arc.ToX)} Y{D2S(arc.ToY)} Z{D2S(z)} R{D2S(arc.Radius)} {cuttingSpeedF}");
     }
 
     void JogSafeZ() => JogZ(safeZ);
@@ -659,15 +805,26 @@ namespace MKeybGCoder
       WriteSVG(
         $"<line x1='{D2SX(x1)}' y1='{D2S(svgHeight - y1)}'" +
         $" x2='{D2SX(x2)}' y2='{D2S(svgHeight - y2)}'" +
-        $" stroke='green' stroke-width='0.1' />");
+        $" stroke='{SvgColorNames.Green}' stroke-width='0.1' />");
+    }
+
+    class SvgColorNames 
+    {
+      public const string DarkRed = "darkred";
+      public const string Green = "green";
     }
 
     void DrawSVGCircle(double centerX, double centerY, double radius)
     {
+      DrawSVGCircle(centerX, centerY, radius, SvgColorNames.DarkRed);
+    }
+
+    void DrawSVGCircle(double centerX, double centerY, double radius, string svgColorName)
+    {
       // SVG Y-coordinate goes top-down, GCode Y-coordinate goes down-top
       WriteSVG(
         $"<circle cx='{D2SX(centerX)}' cy='{D2S(svgHeight - centerY)}' r='{D2S(radius)}'" +
-        $" stroke='darkred' stroke-width='0.1' fill='none' />"
+        $" stroke='{svgColorName}' stroke-width='0.1' fill='none' />"
         );
     }
 
