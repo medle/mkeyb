@@ -76,13 +76,15 @@ namespace MKeybGCoder
     const double stabilThinnerCY = 1;
     const double stabilThinnerDepthZ = (plateTopZ - 0.2);
 
+    const bool cuttingBackSizePlate = true;
+
     // keyboard plate sizes
     const double plateBorder = (25.4 / 5);
     const double plateCornerRadius = plateBorder;
     const double plateBackWallCY = 20;
     const double plateFrontWallCY = 10;
     const double plateCX = u1 * 18.5 + plateBorder * 2;
-    const double plateCY = u1 * 6.5 + plateBorder * 2;
+    const double plateCY = u1 * 6.5 + plateBorder * 2 + (cuttingBackSizePlate ? -4 : 0);
     const double stockOffset = 5;
 
     const double stockCX = stockOffset * 2 + plateCX;
@@ -134,8 +136,9 @@ namespace MKeybGCoder
       CutFlower();
 
       //CutSwitchU1(0, 0);
-      CutTopPlateOutline();
-      CutPlateBoltHoles();
+      //CutTopPlateOutline();
+      //CutPlateBoltHoles();
+      //CutPlateNutHoles();
       //CutCableHole();
       //CutAllKeys();
       //CutStabilBase(0, 0, true);
@@ -159,8 +162,10 @@ namespace MKeybGCoder
     {
       double centerY = plateBorder + plateBackWallCY + (plateCY / 2);
       var path = MakeFlower2(GetBoltHoleX(1), centerY, plateCY - (u1 * 1));
-      Comment("Flower");
-      CutPathZ(true, path, 0);
+      Comment("Flower pass 1");
+      CutPathZ(true, path, -0.5);
+      Comment("Flower pass 2");
+      CutPathZ(true, path, -1);
     }
 
     IEnumerable<GPath.Segment> MakeCircle(double centerX, double centerY, double radius)
@@ -382,6 +387,30 @@ namespace MKeybGCoder
       double x3 = stockOffset + plateCX / 2;
       double dx = (x3 - x1) / 2;
       return x1 + (dx * index);
+    }
+
+    void CutPlateNutHoles()
+    {
+      double nutHoleCX = 10;
+      double nutHoleCY = 5;
+      
+      double y1 = stockOffset + plateBackWallCY;
+      double y2 = stockOffset + plateBackWallCY + plateCY - nutHoleCY; 
+      for (int i = 1; i <= 3; i++) {
+        double x1 = GetBoltHoleX(i) - (nutHoleCX / 2);
+        double x2 = x1 + nutHoleCX;
+        Comment($"Plate nut hole {i} x1={D2SX(x1)} y1={D2S(y1)}");
+        CutSquareFullDepth(x1, y1, x2, y1 + nutHoleCY);
+        Comment($"Plate nut hole {i} x1={D2SX(x1)} y2={D2S(y2)}");
+        CutSquareFullDepth(x1, y2, x2, y2 + nutHoleCY);
+      }
+
+      Comment($"Cut PicoButton hole");
+      double buttonHoleCX = 5;
+      double buttonHoleCY = 10;
+      double y3 = stockOffset + plateBackWallCY + 19 - (buttonHoleCY / 2);
+      double x3 = GetBoltHoleX(1) - 46 - (buttonHoleCX / 2);
+      CutSquareFullDepth(x3, y3, x3 + buttonHoleCX, y3 + buttonHoleCY);
     }
 
     void CutPlateBoltHoles()
