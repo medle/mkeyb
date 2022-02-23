@@ -133,11 +133,11 @@ namespace MKeybGCoder
       DrawSVGCircle(svgWidth, 0, 2);
       DrawSplitLine();
 
-      CutFlower();
+      //CutFlower();
 
       //CutSwitchU1(0, 0);
       //CutTopPlateOutline();
-      //CutPlateBoltHoles();
+      CutPlateBoltHoles();
       //CutPlateNutHoles();
       //CutCableHole();
       //CutAllKeys();
