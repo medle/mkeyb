@@ -135,15 +135,17 @@ namespace MKeybGCoder
 
       //CutFlower();
 
-      //CutSwitchU1(0, 0);
-      //CutTopPlateOutline();
+      CutTopPlateOutline();
       CutPlateBoltHoles();
-      //CutPlateNutHoles();
-      //CutCableHole();
+      CutPlateNutHoles();
+      CutCableHole();
+
       //CutAllKeys();
+
       //CutStabilBase(0, 0, true);
       //CutSwitchUnitWithStabilizer(0, 0, 2, 24);
       //CutStabilPair(0, 0, 2, 24);
+      //CutSwitchU1(0, 0);
 
       //CutKeyCapHolderBase(0, 0, 3, 17.9, 0.9); // row3
       //CutKeyCapHolderClamp(0, 0); 
@@ -411,6 +413,13 @@ namespace MKeybGCoder
       double y3 = stockOffset + plateBackWallCY + 19 - (buttonHoleCY / 2);
       double x3 = GetBoltHoleX(1) - 46 - (buttonHoleCX / 2);
       CutSquareFullDepth(x3, y3, x3 + buttonHoleCX, y3 + buttonHoleCY);
+
+      Comment($"Cable hole");
+      double cableHoleCX = 40;
+      double cableHoleCY = plateBackWallCY + millR;
+      double y4 = stockOffset + plateBackWallCY - cableHoleCY;
+      double x4 = GetBoltHoleX(0) + (GetBoltHoleX(1) - GetBoltHoleX(0)) / 2 - (cableHoleCX / 2);
+      CutSquareFullDepth(x4, y4, x4 + cableHoleCX, y4 + cableHoleCY);
     }
 
     void CutPlateBoltHoles()
