@@ -1,3 +1,7 @@
+#
+# SL Keyboard Firmware (KMK extension)
+# Version 14.03.2022
+#
 
 import board
 import digitalio
@@ -116,37 +120,32 @@ class SLKeyboard(KMKKeyboard):
     def is_pressed(self, key):
         return (key in self.keys_pressed)
 
-    def synth_key(self, new_key, user_key):
-        log(f'Synth {self.get_key_name(new_key)}')
-        self.toggle_light()
-        # send hid of the user key press
+    def send_press_release(self, key1, key2):
+        self.keys_pressed.clear()
+        self.keys_pressed.add(key1)
+        self.keys_pressed.add(key2)
         self._send_hid()
-        # simulate the user key release
-        self.keys_pressed.discard(user_key)
-        self.keys_pressed.discard(self._RSFTX)
-        self._send_hid()
-        # simulate the new key press
-        self.keys_pressed.add(self._RSFTX)
-        self.keys_pressed.add(new_key)
-        self._send_hid()
-        # simulate the new key release
-        self.keys_pressed.discard(new_key)
-        self.keys_pressed.discard(self._RSFTX)
+        self.keys_pressed.clear()
         self._send_hid()
 
-    def maybe_synth(self):
+    def perform_switch(self):
+        log('Switch')
+        self.toggle_light()
+        # simulate the ctrl+shift, then alt+shift
+        self.send_press_release(self._RCTRLX, self._RSFTX)
+        self.send_press_release(self._RALTX, self._RSFTX)
+
+    def maybe_perform_switch(self):
         if self.is_pressed(self._RSFTX):
-           if self.is_pressed(self._RCTRLX) and not self.is_pressed(self._RALTX):
-               self.synth_key(self._RALTX, self._RCTRLX)
-               return
-           if self.is_pressed(self._RALTX) and not self.is_pressed(self._RCTRLX):
-               self.synth_key(self._RCTRLX, self._RALTX)
+           if ((self.is_pressed(self._RCTRLX) and not self.is_pressed(self._RALTX)) or
+               (self.is_pressed(self._RALTX) and not self.is_pressed(self._RCTRLX))):
+                self.perform_switch()
 
     def on_x_key_pressed(self, key):
         log(f'{self.get_key_name(key)}=on')
         self.keys_pressed.add(key)
         self.hid_pending = True
-        self.maybe_synth()
+        self.maybe_perform_switch()
 
     def on_x_key_released(self, key):
         log(f'{self.get_key_name(key)}=off')
@@ -163,7 +162,7 @@ def on_x_key_released(key, keyboard, KC, coord_int=None, coord_raw=None, *args, 
 
 # Debug printing.
 def log(message):
-    _log_enabled = True
+    _log_enabled = False
     if _log_enabled: print(message)
 
 # Program start.
