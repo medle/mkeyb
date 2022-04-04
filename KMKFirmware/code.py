@@ -1,6 +1,6 @@
 #
 # SL Keyboard Firmware (KMK extension)
-# Version 14.03.2022
+# Version 04.04.2022
 #
 
 import board
@@ -46,7 +46,7 @@ class SLKeyboard(KMKKeyboard):
     _RALTX = None   # right alt key
 
     def setup_keys(self):
-        # self.debug_enabled = True
+        self.debug_enabled = False
 
         # 18 pins: columns
         self.col_pins = \
@@ -56,9 +56,9 @@ class SLKeyboard(KMKKeyboard):
              board.GP12, board.GP13, board.GP14, board.GP16,
              board.GP17, board.GP18)
 
-        # 6 pins: rows
+        # 6 pins: rows (GP19 seems to always read true, so changed to GP15)
         self.row_pins = \
-            (board.GP19, board.GP20, board.GP21, board.GP22, board.GP26, board.GP27)
+            (board.GP15, board.GP20, board.GP21, board.GP22, board.GP26, board.GP27)
 
         self.diode_orientation = DiodeOrientation.COL2ROW
 
@@ -141,14 +141,20 @@ class SLKeyboard(KMKKeyboard):
                (self.is_pressed(self._RALTX) and not self.is_pressed(self._RCTRLX))):
                 self.perform_switch()
 
+    def maybe_perform_switch_before_release(self):
+        if self.is_pressed(self._RSFTX) and self.is_pressed(self._RCTRLX):
+            self.toggle_light()
+
     def on_x_key_pressed(self, key):
         log(f'{self.get_key_name(key)}=on')
         self.keys_pressed.add(key)
         self.hid_pending = True
-        self.maybe_perform_switch()
+        #self.maybe_perform_switch()
 
     def on_x_key_released(self, key):
         log(f'{self.get_key_name(key)}=off')
+        # turn the easy mode for debugging (04/04/2022)
+        self.maybe_perform_switch_before_release()
         self.keys_pressed.discard(key)
         self.hid_pending = True
 
