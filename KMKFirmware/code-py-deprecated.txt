@@ -1,0 +1,27 @@
+
+    # Experimental method of receiving bytes from the user OS.
+    def check_serial_input(self):
+        while supervisor.runtime.serial_bytes_available:
+            value = sys.stdin.read(1)
+            log(f'Received: {value}')
+
+    def send_press_release(self, key1, key2):
+        self.keys_pressed.clear()
+        self.keys_pressed.add(key1)
+        self.keys_pressed.add(key2)
+        self._send_hid()
+        self.keys_pressed.clear()
+        self._send_hid()
+
+    def perform_switch(self):
+        log('Switch')
+        self.toggle_light()
+        # simulate the ctrl+shift, then alt+shift
+        self.send_press_release(self._RCTRLX, self._RSFTX)
+        self.send_press_release(self._RALTX, self._RSFTX)
+
+    def maybe_perform_switch(self):
+        if self.is_pressed(self._RSFTX):
+           if ((self.is_pressed(self._RCTRLX) and not self.is_pressed(self._RALTX)) or
+               (self.is_pressed(self._RALTX) and not self.is_pressed(self._RCTRLX))):
+                self.perform_switch()

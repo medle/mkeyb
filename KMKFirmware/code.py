@@ -1,6 +1,6 @@
 #
 # SL Keyboard Firmware (KMK extension)
-# Version 04.04.2022
+# Version 29.04.2022
 #
 
 import board
@@ -14,11 +14,82 @@ import sys
 from kmk.kmk_keyboard import KMKKeyboard
 from kmk.keys import (KC, make_mod_key)
 from kmk.matrix import DiodeOrientation
+from kmk.modules import Module
 
+#
+# KMK Keyboard class custom plugin module.
+#
+class SLModule(Module):
+    def during_bootup(self, keyboard):
+        return
+
+    def before_matrix_scan(self, keyboard):
+        return
+
+    def after_matrix_scan(self, keyboard):
+        return
+
+    def before_hid_send(self, keyboard):
+        # if while waiting for the release of an x key we get any other key pressed
+        # discard the waiting so x-key sequence will be aborted
+        if keyboard.waiting_x_release and keyboard.x_pressed_len < len(keyboard.keys_pressed):
+            keyboard.waiting_x_release = False
+            log(f'discard wait')
+        return
+
+    def after_hid_send(self, keyboard):
+        if keyboard.just_switched:
+            keyboard.just_switched = False
+            log('just switched')
+            send_backup_switch(keyboard)
+        return
+
+    def on_powersave_enable(self, keyboard):
+        return
+
+    def on_powersave_disable(self, keyboard):
+        return
+
+    def process_and_send_hid(self, keyboard, key, pressed):
+        keyboard.process_key(key, pressed)
+        keyboard._send_hid()
+
+    # This is to emulate left alt/shift sequence.
+    def send_backup_switch(self, keyboard):
+        oldkeys_pressed = keyboard.keys_pressed
+        keyboard.keys_pressed = set()
+        self.process_key_and_send_hid(keyboard, KC.LALT, True)
+        self.process_key_and_send_hid(keyboard, KC.LSFT, True)
+        self.process_key_and_send_hid(keyboard, KC.LALT, False)
+        self.process_key_and_send_hid(keyboard, KC.LSFT, False)
+        keyboard.keys_pressed = oldkeys_pressed
+
+
+#
+# Custom KMK Keyboard class definition.
+#
 class SLKeyboard(KMKKeyboard):
 
     # light management
     light_pin = None
+
+    # special overloaded key codes
+    _RCTRLX = None  # right ctrl key
+    _RSFTX = None   # right shift key
+    _RALTX = None   # right alt key
+
+    # special module to detect all the keypresses
+    sl_module = SLModule()
+
+    waiting_x_release = False
+    just_switched = False
+    x_pressed_len = 0
+
+    def __init__(self):
+        self.modules.append(self.sl_module)
+        self.setup_lights()
+        self.setup_keys()
+        return
 
     def setup_lights(self):
         self.light_pin = digitalio.DigitalInOut(board.GP28)
@@ -39,11 +110,6 @@ class SLKeyboard(KMKKeyboard):
             time.sleep(0.2)
             self.turn_light(False)
             time.sleep(0.2)
-
-    # special overloaded key codes
-    _RCTRLX = None  # right ctrl key
-    _RSFTX = None   # right shift key
-    _RALTX = None   # right alt key
 
     def setup_keys(self):
         self.debug_enabled = False
@@ -105,11 +171,18 @@ class SLKeyboard(KMKKeyboard):
             ],
         ]
 
-    # Experimental method of receiving bytes from the user OS.
-    def check_serial_input(self):
-        while supervisor.runtime.serial_bytes_available:
-            value = sys.stdin.read(1)
-            log(f'Received: {value}')
+    def maybe_perform_switch_before_x_release(self):
+        log(f'before x release {self.waiting_x_release}')
+        if self.is_right_shift_and_control_pressed() and self.waiting_x_release:
+            self.toggle_light()
+            self.waiting_x_release = False
+            self.just_switched = True
+
+    def is_pressed(self, key):
+        return (key in self.keys_pressed)
+
+    def is_right_shift_and_control_pressed(self):
+        return (self.is_pressed(self._RSFTX) and self.is_pressed(self._RCTRLX))
 
     def get_key_name(self, key):
         if key == self._RCTRLX: return 'RCTRLX'
@@ -117,47 +190,24 @@ class SLKeyboard(KMKKeyboard):
         if key == self._RSFTX: return 'RSHTX'
         return '?'
 
-    def is_pressed(self, key):
-        return (key in self.keys_pressed)
-
-    def send_press_release(self, key1, key2):
-        self.keys_pressed.clear()
-        self.keys_pressed.add(key1)
-        self.keys_pressed.add(key2)
-        self._send_hid()
-        self.keys_pressed.clear()
-        self._send_hid()
-
-    def perform_switch(self):
-        log('Switch')
-        self.toggle_light()
-        # simulate the ctrl+shift, then alt+shift
-        self.send_press_release(self._RCTRLX, self._RSFTX)
-        self.send_press_release(self._RALTX, self._RSFTX)
-
-    def maybe_perform_switch(self):
-        if self.is_pressed(self._RSFTX):
-           if ((self.is_pressed(self._RCTRLX) and not self.is_pressed(self._RALTX)) or
-               (self.is_pressed(self._RALTX) and not self.is_pressed(self._RCTRLX))):
-                self.perform_switch()
-
-    def maybe_perform_switch_before_release(self):
-        if self.is_pressed(self._RSFTX) and self.is_pressed(self._RCTRLX):
-            self.toggle_light()
-
     def on_x_key_pressed(self, key):
         log(f'{self.get_key_name(key)}=on')
         self.keys_pressed.add(key)
         self.hid_pending = True
-        #self.maybe_perform_switch()
+        if self.is_right_shift_and_control_pressed():
+            log("both pressed");
+            self.waiting_x_release = True
+            self.x_pressed_len = len(self.keys_pressed)
 
     def on_x_key_released(self, key):
         log(f'{self.get_key_name(key)}=off')
-        # turn the easy mode for debugging (04/04/2022)
-        self.maybe_perform_switch_before_release()
+        self.maybe_perform_switch_before_x_release()
         self.keys_pressed.discard(key)
         self.hid_pending = True
 
+#
+# Custom key handlers.
+#
 def on_x_key_pressed(key, keyboard, KC, coord_int=None, coord_raw=None, *args, **kwargs):
     keyboard.on_x_key_pressed(key)
     return keyboard
@@ -166,17 +216,19 @@ def on_x_key_released(key, keyboard, KC, coord_int=None, coord_raw=None, *args, 
     keyboard.on_x_key_released(key)
     return keyboard
 
+#
 # Debug printing.
+#
 def log(message):
     _log_enabled = False
     if _log_enabled: print(message)
 
+#
 # Program start.
+#
 if __name__ == "__main__":
     log("Keyboard setup...")
     keyboard = SLKeyboard()
-    keyboard.setup_lights()
-    keyboard.setup_keys()
     keyboard.welcome_flashes()
     log("Keyboard go...")
     keyboard.go()
