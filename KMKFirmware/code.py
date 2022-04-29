@@ -32,16 +32,17 @@ class SLModule(Module):
     def before_hid_send(self, keyboard):
         # if while waiting for the release of an x key we get any other key pressed
         # discard the waiting so x-key sequence will be aborted
-        if keyboard.waiting_x_release and keyboard.x_pressed_len < len(keyboard.keys_pressed):
+        if keyboard.waiting_x_release and \
+            keyboard.x_pressed_len < len(keyboard.keys_pressed):
             keyboard.waiting_x_release = False
-            log(f'discard wait')
+            log('discarding wait')
         return
 
     def after_hid_send(self, keyboard):
         if keyboard.just_switched:
             keyboard.just_switched = False
             log('just switched')
-            send_backup_switch(keyboard)
+            self.send_backup_switch(keyboard)
         return
 
     def on_powersave_enable(self, keyboard):
@@ -56,6 +57,7 @@ class SLModule(Module):
 
     # This is to emulate left alt/shift sequence.
     def send_backup_switch(self, keyboard):
+        log('emulating left alt/shift')
         oldkeys_pressed = keyboard.keys_pressed
         keyboard.keys_pressed = set()
         self.process_key_and_send_hid(keyboard, KC.LALT, True)
@@ -129,6 +131,10 @@ class SLKeyboard(KMKKeyboard):
         self.diode_orientation = DiodeOrientation.COL2ROW
 
         XXX = KC.TRANSPARENT
+
+        # custom key handlers
+        on_x_key_pressed = lambda key, keyboard, kc, coord_int, coord_raw : keyboard.on_x_key_pressed(key)
+        on_x_key_released = lambda key, keyboard, kc, coord_int, coord_raw : keyboard.on_x_key_released(key)
 
         self._RCTRLX = make_mod_key(code=KC.RIGHT_CONTROL.code, names=('RCTRLX',),
                                     on_press=on_x_key_pressed,
@@ -205,16 +211,6 @@ class SLKeyboard(KMKKeyboard):
         self.keys_pressed.discard(key)
         self.hid_pending = True
 
-#
-# Custom key handlers.
-#
-def on_x_key_pressed(key, keyboard, KC, coord_int=None, coord_raw=None, *args, **kwargs):
-    keyboard.on_x_key_pressed(key)
-    return keyboard
-
-def on_x_key_released(key, keyboard, KC, coord_int=None, coord_raw=None, *args, **kwargs):
-    keyboard.on_x_key_released(key)
-    return keyboard
 
 #
 # Debug printing.
