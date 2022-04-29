@@ -12,7 +12,7 @@ import supervisor
 import sys
 
 from kmk.kmk_keyboard import KMKKeyboard
-from kmk.keys import (KC, make_mod_key)
+from kmk.keys import (KC, make_mod_key, register_key_names)
 from kmk.matrix import DiodeOrientation
 from kmk.modules import Module
 
@@ -33,7 +33,7 @@ class SLModule(Module):
         # if while waiting for the release of an x key we get any other key pressed
         # discard the waiting so x-key sequence will be aborted
         if keyboard.waiting_x_release and \
-            keyboard.x_pressed_len < len(keyboard.keys_pressed):
+                keyboard.x_pressed_len < len(keyboard.keys_pressed):
             keyboard.waiting_x_release = False
             log('discarding wait')
         return
@@ -133,8 +133,10 @@ class SLKeyboard(KMKKeyboard):
         XXX = KC.TRANSPARENT
 
         # custom key handlers
-        on_x_key_pressed = lambda key, keyboard, kc, coord_int, coord_raw : keyboard.on_x_key_pressed(key)
-        on_x_key_released = lambda key, keyboard, kc, coord_int, coord_raw : keyboard.on_x_key_released(key)
+        on_x_key_pressed = \
+            lambda key, keyboard, kc, coord_int, coord_raw : keyboard.on_x_key_pressed(key)
+        on_x_key_released = \
+            lambda key, keyboard, kc, coord_int, coord_raw : keyboard.on_x_key_released(key)
 
         self._RCTRLX = make_mod_key(code=KC.RIGHT_CONTROL.code, names=('RCTRLX',),
                                     on_press=on_x_key_pressed,
@@ -150,6 +152,11 @@ class SLKeyboard(KMKKeyboard):
                                    on_press=on_x_key_pressed,
                                    on_release=on_x_key_released)
         raltx = self._RALTX
+
+        ctrlV = KC.LCTRL(KC.V)
+
+        # tapdance Insert experiment
+        TD_INS = KC.TD(KC.LCTRL(KC.C), ctrlV)
 
         self.keymap = [
             # Qwerty (6 rows + 18 columns = 24 pins)
@@ -173,7 +180,7 @@ class SLKeyboard(KMKKeyboard):
                 KC.TAB,   XXX,     KC.Q,    KC.W,    KC.E,    KC.R,   KC.T,   KC.Y,    KC.U,    KC.I,    KC.O,   KC.P,    KC.LBRC,  KC.RBRC,  KC.BSLASH, KC.DEL,  KC.END,  KC.PGDN,
                 KC.CAPS,  XXX,     KC.A,    KC.S,    KC.D,    KC.F,   KC.G,   KC.H,    KC.J,    KC.K,    KC.L,   KC.SCLN, KC.QUOT,  KC.ENTER, XXX,       XXX,     XXX,     XXX,
                 KC.LSFT,  XXX,     KC.Z,    KC.X,    KC.C,    KC.V,   KC.B,   KC.N,    KC.M,    KC.COMM, KC.DOT, KC.SLSH, XXX,      rsftx,    XXX,       XXX,     KC.UP,   XXX,
-                KC.LCTRL, KC.LGUI, KC.LALT, XXX,     XXX,     XXX,    KC.SPC, XXX,     XXX,     XXX,     raltx,  KC.RGUI, XXX,      XXX,      rctrlx,    KC.LEFT, KC.DOWN, KC.RGHT,
+                KC.LCTRL, KC.LGUI, KC.LALT, XXX,     XXX,     XXX,    KC.SPC, XXX,     XXX,     XXX,     raltx,  KC.RGUI, XXX,      TD_INS,   rctrlx,    KC.LEFT, KC.DOWN, KC.RGHT,
             ],
         ]
 
