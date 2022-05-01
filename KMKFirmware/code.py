@@ -1,6 +1,6 @@
 #
 # SL Keyboard Firmware (KMK extension)
-# Version 29.04.2022
+# Version 01.05.2022
 #
 
 import board
@@ -51,7 +51,7 @@ class SLModule(Module):
     def on_powersave_disable(self, keyboard):
         return
 
-    def process_and_send_hid(self, keyboard, key, pressed):
+    def process_key_and_send_hid(self, keyboard, key, pressed):
         keyboard.process_key(key, pressed)
         keyboard._send_hid()
 
