@@ -57,14 +57,15 @@ class SLModule(Module):
 
     # This is to emulate left alt/shift sequence.
     def send_backup_switch(self, keyboard):
-        log('emulating left alt/shift')
-        oldkeys_pressed = keyboard.keys_pressed
-        keyboard.keys_pressed = set()
-        self.process_key_and_send_hid(keyboard, KC.LALT, True)
-        self.process_key_and_send_hid(keyboard, KC.LSFT, True)
-        self.process_key_and_send_hid(keyboard, KC.LALT, False)
-        self.process_key_and_send_hid(keyboard, KC.LSFT, False)
-        keyboard.keys_pressed = oldkeys_pressed
+        log('not emulating left alt/shift')
+        #oldkeys_pressed = keyboard.keys_pressed
+        #keyboard.keys_pressed = set()
+        #self.process_key_and_send_hid(keyboard, KC.LCTRL, True)
+        #self.process_key_and_send_hid(keyboard, KC.LSFT, True)
+        #time.sleep(0.01)
+        #self.process_key_and_send_hid(keyboard, KC.LCTRL, False)
+        #self.process_key_and_send_hid(keyboard, KC.LSFT, False)
+        #keyboard.keys_pressed = oldkeys_pressed
 
 
 #
