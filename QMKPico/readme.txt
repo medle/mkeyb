@@ -15,7 +15,11 @@ Start QMK MSYS...
 qmk config user.keyboard=medle87
 qmk config user.keymap=default
 qmk compile
+cd qmk_firmware
 make medle87:default:all
+
+To flash new firmware, press App+Esc then copy 
+%$HOME%\qmk_firmware\medle87_default.uf2 file to bootloader disk
 
 https://docs.qmk.fm/#/keymap
 https://docs.qmk.fm/#/configurator_default_keymaps

@@ -44,36 +44,28 @@ void keyboard_post_init_user(void) {
   play_welcome_flashes();
 }
 
-static bool rsft_down = false;
-static bool rctl_down = false;
-
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
 
-    // Custom user keycode 1
+    // Custom user keycode 1 toggles LED
     case KC_USR1:
       if (record->event.pressed) {
 	toggle_led();
       } 
       return false; // Skip all further processing of this key
 
-    // Right shift keycode
+    // See docs/feature_advanced_keycodes.md
+    // When right shift is released and right ctrl is pressed, toggle LED
     case KC_RSFT:
-      if (record->event.pressed) {
-        rsft_down = true;
-      } else {
-        rsft_down = false;  
-        if(rctl_down) toggle_led();
+      if (!record->event.pressed) {
+        if (get_mods() & MOD_BIT(KC_RCTL)) toggle_led();  
       }
       break; 
 
-    // Right ctrl keycode
+    // When right ctrl is released and right shift is pressed, toggle LED
     case KC_RCTL:
-      if (record->event.pressed) {
-        rctl_down = true;
-      } else {
-        rctl_down = false; 
-        if(rsft_down) toggle_led();
+      if (!record->event.pressed) {
+        if (get_mods() & MOD_BIT(KC_RSFT)) toggle_led();  
       }
       break;
   }
