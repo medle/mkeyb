@@ -1,5 +1,9 @@
-
+//
+// Medle87 QMK keyboard firmware
+// SL (13.06.2023)
+//
 #include "medle87.h"
+#include "deferred_exec.h"
 
 #define LED_PIN GP15
 
@@ -44,6 +48,28 @@ void keyboard_post_init_user(void) {
   play_welcome_flashes();
 }
 
+#define GENERATE_ALT_SHIFT
+#ifdef GENERATE_ALT_SHIFT
+//
+// Generates Left-Alt-Shift sequence as if user has pressed 
+// a change kanguage keyboard shortcut.
+//
+static bool generate_alt_shift(void) {
+  if (get_mods() != 0) return false;
+  register_code(KC_LALT);
+  register_code(KC_LSFT);
+  unregister_code(KC_LALT);
+  unregister_code(KC_LSFT);
+  return true; 
+}
+
+static bool alt_shift_pending = false;
+#endif
+
+//
+// These function is called by QMK every time a key is pressed or released.
+// See %HOME%/qmk_firmware/docs/feature_advanced_keycodes.md
+//
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
 
@@ -54,18 +80,27 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       } 
       return false; // Skip all further processing of this key
 
-    // See docs/feature_advanced_keycodes.md
-    // When right shift is released and right ctrl is pressed, toggle LED
+    // When right shift is released and right ctrl is held, toggle LED
     case KC_RSFT:
       if (!record->event.pressed) {
-        if (get_mods() & MOD_BIT(KC_RCTL)) toggle_led();  
+        if (get_mods() & MOD_BIT(KC_RCTL)) {
+          toggle_led();
+#ifdef GENERATE_ALT_SHIFT
+          alt_shift_pending = true; // schedule job after mod change is finished
+#endif
+        }  
       }
       break; 
 
-    // When right ctrl is released and right shift is pressed, toggle LED
+    // When right ctrl is released and right shift is held, toggle LED
     case KC_RCTL:
       if (!record->event.pressed) {
-        if (get_mods() & MOD_BIT(KC_RSFT)) toggle_led();  
+        if (get_mods() & MOD_BIT(KC_RSFT)) {
+          toggle_led();
+#ifdef GENERATE_ALT_SHIFT
+          alt_shift_pending = true; // schedule job after mod change is finished
+#endif
+        }
       }
       break;
   }
@@ -74,5 +109,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   return true;
 }
 
+//
+// This function gets called by QMK at the end of all QMK 
+// processing, before starting the next iteration.
+//
+void housekeeping_task_user(void) {
+#ifdef GENERATE_ALT_SHIFT
+  if (alt_shift_pending) {
+    if (generate_alt_shift()) alt_shift_pending = false; 
+  }
+#endif
+}
 
 
