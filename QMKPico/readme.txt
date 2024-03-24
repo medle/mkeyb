@@ -4,7 +4,7 @@
 87 key medle87 default layout:
 c:\users\sl\qmk_firmware\layouts\default\tkl_ansi
 
-Нашел простой пример на RP2040:
+Simple sample with RP2040:
 c:\users\sl\qmk_firmware\keyboards\an_achronism\tetromino
 c:\users\sl\qmk_firmware\keyboards\dnworks\sbl
 
@@ -18,7 +18,7 @@ qmk compile
 cd qmk_firmware
 make medle87:default:all
 
-To flash new firmware, press App+Esc then copy 
+To flash new firmware, press Menu+Pause then copy 
 %$HOME%\qmk_firmware\medle87_default.uf2 file to bootloader disk
 
 https://docs.qmk.fm/#/keymap
